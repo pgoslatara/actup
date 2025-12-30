@@ -1,0 +1,38 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-added-large-files
+        args: [--maxkb=700]
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        entry: uv run ruff check --force-exclude --config pyproject.toml --fix
+        language: system
+        types_or: [python, pyi, jupyter]
+        require_serial: true
+      - id: ruff-format
+        name: ruff-format
+        entry: uv run ruff format --force-exclude --config pyproject.toml
+        language: system
+        types_or: [python, pyi, jupyter]
+        require_serial: true
+      - id: ty
+        args: [check, ./src]
+        entry: uv run ty
+        language: system
+        name: ty
+        pass_filenames: false
+        require_serial: true
+        types_or: [python, pyi]
+      - id: yamlfix
+        entry: uv run yamlfix
+        language: system
+        name: yamlfix
+        pass_filenames: true
+        require_serial: true
+        types_or: [yaml]

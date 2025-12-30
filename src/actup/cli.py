@@ -1,0 +1,322 @@
+import logging
+import os
+import shutil
+import time
+from collections import defaultdict
+from datetime import datetime
+from pathlib import Path
+
+import typer
+from rich import print
+
+from actup.config import settings
+from actup.database import Database
+from actup.github_api import GitHubClient
+from actup.logger import logger
+from actup.models import GitHubAction, GitHubRepo, PullRequestRecord, RepositoryMention
+from actup.tracker import update_tracker
+from actup.utils import (
+    git_clone_shallow,
+    is_major_version_outdated,
+    replace_action_version_in_content,
+    scan_file_for_actions,
+)
+
+app = typer.Typer()
+client = GitHubClient()
+
+
+@app.command()
+def create_prs():
+    """Create Pull Requests for outdated actions."""
+    db = Database()
+    outdated = db.get_outdated_mentions()
+    db.close()
+
+    if not outdated:
+        logger.info("No outdated actions found. Did you run scan-repos?")
+        return
+
+    repo_updates = defaultdict(list)
+    for mention in outdated:
+        repo_updates[mention.repo_full_name].append(mention)
+
+    current_user = client.get_current_user()
+    temp_dir = Path("temp_pr")
+
+    for repo_full_name, mentions in repo_updates.items():
+        owner, repo_name = repo_full_name.split("/")
+        logger.info(f"Processing updates for {repo_full_name}...")
+
+        try:
+            target_repo_info = client.get_repo(owner, repo_name)
+            default_branch = target_repo_info.get("default_branch", "main")
+
+            logger.info("Forking...")
+            try:
+                client.create_fork(owner, repo_name)
+                time.sleep(5)
+            except Exception:
+                logger.info("Fork already exists (or failed), proceeding...")
+
+            try:
+                client.sync_fork(current_user, repo_name, default_branch)
+                logger.info("Fork synced with upstream.")
+            except Exception as e:
+                logger.warning(f"Could not sync fork: {e}")
+
+            fork_url = f"https://github.com/{current_user}/{repo_name}.git"
+            repo_dir = temp_dir / repo_full_name.replace("/", "_")
+
+            logger.info(f"Cloning fork {fork_url}...")
+            auth_url = fork_url.replace("https://", f"https://{client.token}@")
+
+            repo = git_clone_shallow(auth_url, str(repo_dir))
+
+            branch_name = f"actup/update-actions-{int(datetime.now().timestamp())}"
+            repo.git.checkout("-b", branch_name)
+
+            modified_files = set()
+            for m in mentions:
+                full_path = repo_dir / m.file_path
+                with open(full_path, "r") as f:
+                    content = f.read()
+
+                new_content = replace_action_version_in_content(
+                    content, m.action_name, m.detected_version, m.latest_version
+                )
+
+                if new_content != content:
+                    with open(full_path, "w") as f:
+                        f.write(new_content)
+                    modified_files.add(m.file_path)
+
+            if not modified_files:
+                logger.info("No files changed.")
+                continue
+            
+            if mentions > 1:
+                pr_title = commit_message = "docs: Update outdated GitHub Actions versions"
+                pr_body = "This PR updates outdated GitHub Action versions.\n\n"
+            else:
+                pr_title = commit_message = "docs: Update outdated GitHub Actions version"
+                pr_body = "This PR updates an outdated GitHub Action version.\n\n"
+
+            repo.index.add(list(modified_files))
+            repo.index.commit(commit_message)
+            logger.info("Pushing...")
+            repo.remote().push(branch_name)
+
+            logger.info("Creating PR...")
+            pr_title = pr_title
+            pr_body = pr_body
+            for m in mentions:
+                pr_body += (
+                    f"- Updated `{m.action_name}` from `{m.detected_version}` "
+                    f"to `{m.latest_version}` in `{m.file_path}`\n"
+                )
+            
+            logger.info(f"Visit https://github.com/{repo_full_name}/compare/{default_branch}...{current_user}:{repo_full_name.split('/')[1]}:{branch_name}?expand=1 to check PR before creation")
+            confirmation = input("Happy to proceed (Y/N)?")
+            if confirmation.lower() != "y":
+                raise RuntimeError
+
+            pr = client.create_pull_request(
+                owner,
+                repo_name,
+                title=pr_title,
+                body=pr_body,
+                head=f"{current_user}:{branch_name}",
+                base=default_branch,
+            )
+
+            logger.info(f"Draft PR created: {pr['html_url']}")
+
+            record = PullRequestRecord(
+                repo_full_name=repo_full_name,
+                pr_url=pr["html_url"],
+                branch_name=branch_name,
+                created_at=datetime.now(),
+                status=pr["state"],
+            )
+            db = Database()
+            db.save_pr_record(record)
+            db.close()
+            update_tracker(record)
+
+        except Exception as e:
+            logger.error(f"Failed to process {repo_full_name}: {e}")
+        finally:
+            if os.path.exists(repo_dir):
+                shutil.rmtree(repo_dir, ignore_errors=True)
+
+    
+
+@app.command()
+def fetch_repos():
+    """Fetch popular repositories contents."""
+    db = Database()
+    known_repos = db.get_popular_repos()
+    db.close()
+    if not known_repos:
+        raise RuntimeError("No known repos found. Run find-repos first.")
+
+    num_repos = len(known_repos)
+    i= 1
+    for repo_data in known_repos:
+        repo_full_name = repo_data.repo_full_name
+        logger.info(f"({i}/{num_repos}): Scanning https://www.github.com/{repo_full_name}...")
+        i+=1
+
+        repo_url = repo_data.clone_url
+        repo_dir = Path(settings.temp_dir) / repo_full_name.replace("/", "_")
+            # if not repo_dir.exists():
+            #     git_clone_shallow(repo_url, str(repo_dir))
+            
+
+@app.command()
+def find_actions(limit: int = settings.popular_actions_limit):
+    """Fetch popular GitHub Actions and their latest major versions."""
+    
+    logger.info(f"Searching for top {limit} popular actions...")
+    actions = client.search_popular_actions(limit)
+    db = Database()
+    db.drop_actions()
+
+    i = 1
+    for repo_data in actions:
+        name = repo_data["name"]
+        owner = repo_data["owner"]
+        repo_name = repo_data["repo"]
+        stars = repo_data["stars"]
+        latest_version = repo_data["latest_version"]
+        latest_major = client._extract_major_version(latest_version)
+        action = GitHubAction(name=name, owner=owner, repo=repo_name, stars=stars, latest_version=latest_version,  latest_major_version=latest_major)
+        db.save_popular_action(action)
+        i +=1
+    db.close()
+
+
+@app.command()
+def find_repos(limit: int = settings.popular_repos_limit):
+    """Find popular repositories."""
+
+    logger.info(f"Searching for top {limit} popular repositories...")
+    repos = client.search_popular_repositories(limit)
+    db = Database()
+    db.drop_repositories()
+    
+    for repo_data in repos:
+        repo_full_name = repo_data["full_name"]
+        clone_url = repo_data["clone_url"]
+        stars = repo_data["stargazers_count"]
+
+        action = GitHubRepo(repo_full_name=repo_full_name, clone_url=clone_url, stars=stars)
+        db.save_popular_repo(action)
+    db.close()
+
+@app.command()
+def init_db():
+    """Initialize the DuckDB database schema."""
+    db = Database()
+    db.close()
+    logger.info(f"Database initialized at {settings.duckdb_file}")
+
+
+@app.callback()
+def main(verbose: bool = typer.Option(False, "-v", "--verbose", help="Enable verbose logging.")):
+    """ActUp: A tool to analyze GitHub Action usage."""
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+
+
+@app.command()
+def report():
+    """Generate a summary of findings."""
+    db = Database()
+    print("[bold]Scanned Actions[/bold]")
+    for action in db.get_popular_actions():
+        print(f"- {action.name}: {action.latest_major_version}")
+
+    print("\n[bold]Outdated Mentions[/bold]")
+    mentions = db.get_outdated_mentions()
+    for m in mentions:
+        print(f"- {m.repo_full_name} ({m.file_path}): {m.action_name} {m.detected_version} -> {m.latest_version}")
+
+    print(f"\nTotal outdated: {len(mentions)}")
+    db.close()
+
+
+@app.command()
+def reset_db():
+    """Delete the DuckDB file and re-initialize."""
+    if Path(settings.duckdb_file).exists:
+        Path(settings.duckdb_file).unlink()
+        logger.warning(f"Deleted {settings.duckdb_file}")
+    init_db()
+
+
+@app.command()
+def scan_repos():
+    """Scan popular repositories for outdated action usage."""
+    db = Database()
+    known_actions = {a.name: a.latest_major_version for a in db.get_popular_actions()}
+    known_repos = db.get_popular_repos()
+    db.close()
+    if not known_actions:
+        raise RuntimeError("No known actions found. Run find-actions first.")
+    if not known_repos:
+        raise RuntimeError("No known repos found. Run find-repos first.")
+    if not Path(settings.temp_dir).exists():
+        raise RuntimeError("No cloned repos found. Run fetch-repos first.")
+
+    num_repos = len(known_repos)
+    i= 1
+    for repo_data in known_repos:
+        repo_full_name = repo_data.repo_full_name
+        logger.info(f"({i}/{num_repos}): Scanning https://www.github.com/{repo_full_name}...")
+        i+=1
+        repo_dir = Path(settings.temp_dir) / repo_full_name.replace("/", "_")
+
+        try:
+            for root, _, files in os.walk(repo_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(file_path, repo_dir)
+                    try:
+                        with open(file_path, "r", errors="ignore") as f:
+                            content = f.read()
+
+                        mentions = scan_file_for_actions(content, list(known_actions.keys()))
+                        for line_num, action_name, detected_ver in mentions:
+                            latest_ver = known_actions[action_name]
+                            if is_major_version_outdated(detected_ver, latest_ver):
+                                mention = RepositoryMention(
+                                    repo_full_name=repo_full_name,
+                                    file_path=rel_path,
+                                    line_number=line_num,
+                                    action_name=action_name,
+                                    detected_version=detected_ver,
+                                    latest_version=latest_ver,
+                                    is_outdated=True,
+                                )
+                                db=Database()
+                                db.save_repo_mention(mention)
+                                db.close()
+                                logger.warning(
+                                    f"Found outdated {action_name}: {detected_ver} < {latest_ver} "
+                                    f"in {rel_path}:{line_num}"
+                                )
+                    except Exception as e:
+                        logger.debug(f"Skipping {rel_path}: {e}")
+
+        except Exception as e:
+            logger.error(f"Error processing {repo_full_name}: {e}")
+
+
+
+
+
+
+if __name__ == "__main__":
+    app()
