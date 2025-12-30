@@ -9,3 +9,4 @@ temp_scan/
 *.duckdb
 *.ipynb
 *.pyc
+coverage.xml

@@ -12,4 +12,10 @@ install:
 	uv sync --extra=dev
 
 test:
-	uv run pytest
+	uv run pytest \
+		-c ./tests \
+		--junitxml=coverage.xml \
+		--cov-report=term-missing:skip-covered \
+		--cov=src/actup/ \
+		--numprocesses 5 \
+		./tests

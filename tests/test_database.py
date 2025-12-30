@@ -3,7 +3,14 @@ from actup.models import GitHubAction
 
 def test_save_popular_action(test_db):
     """Test saving a popular action."""
-    action = GitHubAction(name="actions/checkout", owner="actions", repo="checkout", latest_major_version="v4")
+    action = GitHubAction(
+        name="actions/checkout",
+        owner="actions",
+        repo="checkout",
+        stars=15,
+        latest_version="v4.0.1",
+        latest_major_version="v4",
+    )
     test_db.save_popular_action(action)
 
     actions = test_db.get_popular_actions()

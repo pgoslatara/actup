@@ -5,17 +5,15 @@ description = "Analyzes GitHub Action usage in documentation and suggests update
 authors = [{ name = "Padraic Slattery", email = "pgoslatara@gmail.com" }]
 requires-python = ">=3.13"
 dependencies = [
-    "typer>=0.9.0",
     "duckdb>=0.9.0",
-    "httpx>=0.25.0",
     "GitPython>=3.1.0",
+    "httpx>=0.25.0",
+    "typer>=0.9.0",
     "pydantic>=2.0.0",
     "PyYAML>=6.0",
-    "rich>=13.0.0",
-    "duckcli>=0.2.1",
-    "retry>=0.9.2",
-    "ipykernel>=7.1.0",
     "requests>=2.32.5",
+    "retry>=0.9.2",
+    "rich>=13.0.0",
 ]
 
 [project.scripts]
@@ -23,9 +21,12 @@ actup = "actup.cli:app"
 
 [project.optional-dependencies]
 dev = [
+    "duckcli>=0.2.1",
+    "ipykernel>=7.1.0",
     "prek>=0.2.25",
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-xdist>=3.8.0",
     "ruff>=0.1.0",
     "ty>=0.0.1",
     "yamlfix>=1.19.1",

@@ -9,9 +9,10 @@ from actup.models import GitHubAction, GitHubRepo, PullRequestRecord, Repository
 class Database:
     """A wrapper for the DuckDB database."""
 
-    def __init__(self):
+    def __init__(self, db_file: str | None = None):
         """Initialize the database connection."""
-        self.con = duckdb.connect(settings.duckdb_file)
+        self.db_file = db_file or settings.duckdb_file
+        self.con = duckdb.connect()
         self.init_db()
 
     def close(self):
