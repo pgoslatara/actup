@@ -10,10 +10,11 @@ class GitHubAction(BaseModel):
     owner: str
     repo: str
     stars: int
-    latest_version: str| None
-    latest_major_version: str| None
+    latest_version: str | None
+    latest_major_version: str | None
     checked_at: datetime | None = None
-    
+
+
 class GitHubRepo(BaseModel):
     """Model representing a GitHub Rpository."""
 

@@ -3,7 +3,7 @@ from datetime import datetime
 import duckdb
 
 from actup.config import settings
-from actup.models import GitHubAction, PullRequestRecord, RepositoryMention, GitHubRepo
+from actup.models import GitHubAction, GitHubRepo, PullRequestRecord, RepositoryMention
 
 
 class Database:
@@ -13,12 +13,10 @@ class Database:
         """Initialize the database connection."""
         self.con = duckdb.connect(settings.duckdb_file)
         self.init_db()
-        
-    def drop_actions(self):
-        self.con.execute("TRUNCATE TABLE popular_actions")
-        
-    def drop_repositories(self):
-        self.con.execute("TRUNCATE TABLE popular_repositories")
+
+    def close(self):
+        """Close the database connection."""
+        self.con.close()
 
     def get_outdated_mentions(self) -> list[RepositoryMention]:
         """Get all outdated action mentions."""
@@ -38,8 +36,21 @@ class Database:
 
     def get_popular_actions(self) -> list[GitHubAction]:
         """Get all popular actions."""
-        res = self.con.execute("SELECT * FROM popular_actions WHERE latest_major_version IS NOT NULL ORDER BY stars DESC").fetchall()
-        return [GitHubAction(name=r[0], owner=r[1], repo=r[2], stars=int(r[3]), latest_version=r[4], latest_major_version=r[5], checked_at=r[6]) for r in res]
+        res = self.con.execute(
+            "SELECT * FROM popular_actions WHERE latest_major_version IS NOT NULL ORDER BY stars DESC"
+        ).fetchall()
+        return [
+            GitHubAction(
+                name=r[0],
+                owner=r[1],
+                repo=r[2],
+                stars=int(r[3]),
+                latest_version=r[4],
+                latest_major_version=r[5],
+                checked_at=r[6],
+            )
+            for r in res
+        ]
 
     def get_popular_repos(self) -> list[GitHubRepo]:
         """Get all popular repos."""
@@ -47,6 +58,7 @@ class Database:
         return [GitHubRepo(repo_full_name=r[0], clone_url=r[1], stars=int(r[2]), checked_at=r[3]) for r in res]
 
     def init_db(self):
+        """Initialise the database tables."""
         self.con.execute("""
             CREATE TABLE IF NOT EXISTS action_mentions (
                 repo_full_name VARCHAR,
@@ -100,7 +112,15 @@ class Database:
             """
             INSERT OR REPLACE INTO popular_actions VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
-            (action.name, action.owner, action.repo, action.stars, action.latest_version, action.latest_major_version, datetime.now()),
+            (
+                action.name,
+                action.owner,
+                action.repo,
+                action.stars,
+                action.latest_version,
+                action.latest_major_version,
+                datetime.now(),
+            ),
         )
 
     def save_popular_repo(self, repo: GitHubRepo):
@@ -138,6 +158,10 @@ class Database:
             ),
         )
 
-    def close(self):
-        """Close the database connection."""
-        self.con.close()
+    def truncate_actions(self):
+        """Truncate the popular_actions table."""
+        self.con.execute("TRUNCATE TABLE popular_actions")
+
+    def truncate_repositories(self):
+        """Truncate the popular_repositories table."""
+        self.con.execute("TRUNCATE TABLE popular_repositories")

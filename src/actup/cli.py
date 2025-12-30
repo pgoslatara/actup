@@ -94,7 +94,7 @@ def create_prs():
             if not modified_files:
                 logger.info("No files changed.")
                 continue
-            
+
             if mentions > 1:
                 pr_title = commit_message = "docs: Update outdated GitHub Actions versions"
                 pr_body = "This PR updates outdated GitHub Action versions.\n\n"
@@ -115,8 +115,11 @@ def create_prs():
                     f"- Updated `{m.action_name}` from `{m.detected_version}` "
                     f"to `{m.latest_version}` in `{m.file_path}`\n"
                 )
-            
-            logger.info(f"Visit https://github.com/{repo_full_name}/compare/{default_branch}...{current_user}:{repo_full_name.split('/')[1]}:{branch_name}?expand=1 to check PR before creation")
+
+            logger.info(
+                f"Visit https://github.com/{repo_full_name}/compare/{default_branch}...{current_user}:",
+                "{repo_full_name.split('/')[1]}:{branch_name}?expand=1 to check PR before creation",
+            )
             confirmation = input("Happy to proceed (Y/N)?")
             if confirmation.lower() != "y":
                 raise RuntimeError
@@ -150,7 +153,6 @@ def create_prs():
             if os.path.exists(repo_dir):
                 shutil.rmtree(repo_dir, ignore_errors=True)
 
-    
 
 @app.command()
 def fetch_repos():
@@ -162,26 +164,25 @@ def fetch_repos():
         raise RuntimeError("No known repos found. Run find-repos first.")
 
     num_repos = len(known_repos)
-    i= 1
+    i = 1
     for repo_data in known_repos:
         repo_full_name = repo_data.repo_full_name
         logger.info(f"({i}/{num_repos}): Scanning https://www.github.com/{repo_full_name}...")
-        i+=1
+        i += 1
 
         repo_url = repo_data.clone_url
         repo_dir = Path(settings.temp_dir) / repo_full_name.replace("/", "_")
-            # if not repo_dir.exists():
-            #     git_clone_shallow(repo_url, str(repo_dir))
-            
+        if not repo_dir.exists():
+            git_clone_shallow(repo_url, str(repo_dir))
+
 
 @app.command()
 def find_actions(limit: int = settings.popular_actions_limit):
     """Fetch popular GitHub Actions and their latest major versions."""
-    
     logger.info(f"Searching for top {limit} popular actions...")
     actions = client.search_popular_actions(limit)
     db = Database()
-    db.drop_actions()
+    db.truncate_actions()
 
     i = 1
     for repo_data in actions:
@@ -191,21 +192,27 @@ def find_actions(limit: int = settings.popular_actions_limit):
         stars = repo_data["stars"]
         latest_version = repo_data["latest_version"]
         latest_major = client._extract_major_version(latest_version)
-        action = GitHubAction(name=name, owner=owner, repo=repo_name, stars=stars, latest_version=latest_version,  latest_major_version=latest_major)
+        action = GitHubAction(
+            name=name,
+            owner=owner,
+            repo=repo_name,
+            stars=stars,
+            latest_version=latest_version,
+            latest_major_version=latest_major,
+        )
         db.save_popular_action(action)
-        i +=1
+        i += 1
     db.close()
 
 
 @app.command()
 def find_repos(limit: int = settings.popular_repos_limit):
     """Find popular repositories."""
-
     logger.info(f"Searching for top {limit} popular repositories...")
     repos = client.search_popular_repositories(limit)
     db = Database()
-    db.drop_repositories()
-    
+    db.truncate_repositories()
+
     for repo_data in repos:
         repo_full_name = repo_data["full_name"]
         clone_url = repo_data["clone_url"]
@@ -214,6 +221,7 @@ def find_repos(limit: int = settings.popular_repos_limit):
         action = GitHubRepo(repo_full_name=repo_full_name, clone_url=clone_url, stars=stars)
         db.save_popular_repo(action)
     db.close()
+
 
 @app.command()
 def init_db():
@@ -271,11 +279,11 @@ def scan_repos():
         raise RuntimeError("No cloned repos found. Run fetch-repos first.")
 
     num_repos = len(known_repos)
-    i= 1
+    i = 1
     for repo_data in known_repos:
         repo_full_name = repo_data.repo_full_name
         logger.info(f"({i}/{num_repos}): Scanning https://www.github.com/{repo_full_name}...")
-        i+=1
+        i += 1
         repo_dir = Path(settings.temp_dir) / repo_full_name.replace("/", "_")
 
         try:
@@ -300,7 +308,7 @@ def scan_repos():
                                     latest_version=latest_ver,
                                     is_outdated=True,
                                 )
-                                db=Database()
+                                db = Database()
                                 db.save_repo_mention(mention)
                                 db.close()
                                 logger.warning(
@@ -312,10 +320,6 @@ def scan_repos():
 
         except Exception as e:
             logger.error(f"Error processing {repo_full_name}: {e}")
-
-
-
-
 
 
 if __name__ == "__main__":

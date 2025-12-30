@@ -1,17 +1,22 @@
-import os, time
-import re, requests, datetime
+import os
+import re
+import time
 from typing import Any
 
 import httpx
+import requests
+from retry import retry
 
 from actup.config import settings
 from actup.logger import logger
-from retry import retry
+
 
 class GitHubClient:
     """A client for interacting with the GitHub API."""
 
-    def __init__(self, ):
+    def __init__(
+        self,
+    ):
         """Initialize the GitHubClient."""
         self.token = os.environ.get(settings.pat_github_env_var)
         self.headers = {
@@ -32,10 +37,10 @@ class GitHubClient:
         logger.debug(f"Request: {method} {path}")
         response = self.client.request(method, path, params=params, json=json)
         response.raise_for_status()
-        r =response.json()
+        r = response.json()
         logger.debug(f"{r=}")
         return r
-    
+
     def create_fork(self, owner: str, repo: str) -> dict:
         """Create a fork of the repository."""
         return self._make_request("POST", f"/repos/{owner}/{repo}/forks")
@@ -56,39 +61,31 @@ class GitHubClient:
 
     def search_popular_actions(self, limit) -> list[dict]:
         """Search for popular GitHub Actions."""
-
         actions = []
         page = 1
         while True:
             url = f"https://github.com/marketplace?page={page}&type=actions"
             logger.info(f"Fetching from {url}")
-            marketplace_data = requests.get(
-                headers={
-                    "accept": "application/json"
-                },
-                url=url
-            ).json()
+            marketplace_data = requests.get(headers={"accept": "application/json"}, url=url).json()
             for i in marketplace_data["results"]:
                 action_data = requests.get(
-                    headers={
-                        "accept": "application/json"
-                    },
-                    url=f"https://github.com/marketplace/actions/{i['slug']}"
+                    headers={"accept": "application/json"}, url=f"https://github.com/marketplace/actions/{i['slug']}"
                 ).json()
-                actions.append({
-                    "name": i["name"],
-                    "owner": action_data["payload"]["repository"]["owner"],
-                    "repo": action_data["payload"]["repository"]["name"],
-                    "stars": action_data["payload"]["action"]["stars"],
-                    "latest_version": action_data["payload"]["releaseData"]["latestRelease"]["tagName"],
-                })
-            
+                actions.append(
+                    {
+                        "name": i["name"],
+                        "owner": action_data["payload"]["repository"]["owner"],
+                        "repo": action_data["payload"]["repository"]["name"],
+                        "stars": action_data["payload"]["action"]["stars"],
+                        "latest_version": action_data["payload"]["releaseData"]["latestRelease"]["tagName"],
+                    }
+                )
+
             if len(actions) > limit:
                 break
             page += 1
-        
-        return actions[:limit]
 
+        return actions[:limit]
 
     def search_popular_repositories(self, limit) -> list[dict]:
         """Search for popular repositories."""
@@ -104,13 +101,13 @@ class GitHubClient:
                 repos.extend(data.get("items", []))
                 if len(repos) > limit:
                     break
-                page+=1
-                if page == 10: # Not sure why page 10 is getting 403 codes, but it is
+                page += 1
+                if page == 10:  # Not sure why page 10 is getting 403 codes, but it is
                     max_stars_count = int(repos[-1]["stargazers_count"])
                     logger.info(f"Resetting max_stars_count to {max_stars_count}.")
-                    time.sleep(30) # To avoid GitHub returning 403 codes
+                    time.sleep(30)  # To avoid GitHub returning 403 codes
                     break
-        
+
         return repos[:limit]
 
     def sync_fork(self, owner: str, repo: str, branch: str) -> dict:

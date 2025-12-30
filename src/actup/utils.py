@@ -1,29 +1,11 @@
 import os
 import re
 import shutil
+from pathlib import Path
 
 from git import Repo
 
-from pathlib import Path
-import logging
-import os
-import shutil
-import time
-from collections import defaultdict
-from datetime import datetime
-from pathlib import Path
 
-import typer
-from rich import print
-
-from actup.config import settings
-from actup.database import Database
-from actup.github_api import GitHubClient
-from actup.logger import logger
-from actup.models import GitHubAction, GitHubRepo, PullRequestRecord, RepositoryMention
-from actup.tracker import update_tracker
-   
-            
 def git_clone_shallow(repo_url: str, target_dir: str):
     """Clone a git repository shallowly."""
     if Path(target_dir).exists():
@@ -45,6 +27,7 @@ def is_major_version_outdated(detected_version: str, latest_version: str) -> boo
     except ValueError:
         return False
 
+
 def parse_action_version(action_line: str) -> tuple[str, str] | None:
     """Parse the action name and version from a line."""
     pattern = r"uses:\s+([a-zA-Z0-9_\-]+/[a-zA-Z0-9_\-]+)@([a-zA-Z0-9_\-\.]+)"
@@ -52,7 +35,6 @@ def parse_action_version(action_line: str) -> tuple[str, str] | None:
     if match:
         return match.group(1), match.group(2)
     return None
-
 
 
 def replace_action_version_in_content(content: str, action_name: str, old_version: str, new_version: str) -> str:
