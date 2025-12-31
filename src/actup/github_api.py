@@ -71,15 +71,18 @@ class GitHubClient:
                 action_data = requests.get(
                     headers={"accept": "application/json"}, url=f"https://github.com/marketplace/actions/{i['slug']}"
                 ).json()
-                actions.append(
-                    {
-                        "name": i["name"],
-                        "owner": action_data["payload"]["repository"]["owner"],
-                        "repo": action_data["payload"]["repository"]["name"],
-                        "stars": action_data["payload"]["action"]["stars"],
-                        "latest_version": action_data["payload"]["releaseData"]["latestRelease"]["tagName"],
-                    }
-                )
+                if "error" in action_data:
+                    logger.warning(f"Unable to fetch info for {i}.")
+                else:
+                    actions.append(
+                        {
+                            "name": i["name"],
+                            "owner": action_data["payload"]["repository"]["owner"],
+                            "repo": action_data["payload"]["repository"]["name"],
+                            "stars": action_data["payload"]["action"]["stars"],
+                            "latest_version": action_data["payload"]["releaseData"]["latestRelease"]["tagName"],
+                        }
+                    )
 
             if len(actions) > limit:
                 break

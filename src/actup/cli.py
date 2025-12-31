@@ -193,8 +193,7 @@ def find_actions(limit: int = settings.popular_actions_limit):
     db = Database()
     db.truncate_actions()
 
-    i = 1
-    for repo_data in actions:
+    for i, repo_data in enumerate(actions, start=1):
         name = repo_data["name"]
         owner = repo_data["owner"]
         repo_name = repo_data["repo"]
@@ -210,7 +209,6 @@ def find_actions(limit: int = settings.popular_actions_limit):
             latest_major_version=latest_major,
         )
         db.save_popular_action(action)
-        i += 1
     db.close()
 
 
@@ -273,6 +271,46 @@ def reset_db():
     init_db()
 
 
+def _scan_repos(repo_data) -> None:
+    repo_full_name = repo_data.repo_full_name
+    logger.info(f"Scanning https://www.github.com/{repo_full_name}...")
+    repo_dir = Path(settings.temp_dir) / repo_full_name.replace("/", "_")
+
+    try:
+        for root, _, files in os.walk(repo_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                rel_path = os.path.relpath(file_path, repo_dir)
+                try:
+                    with open(file_path, "r", errors="ignore") as f:
+                        content = f.read()
+
+                    mentions = scan_file_for_actions(content, list(known_actions.keys()))
+                    for line_num, action_name, detected_ver in mentions:
+                        latest_ver = known_actions[action_name]
+                        if is_major_version_outdated(detected_ver, latest_ver):
+                            mention = RepositoryMention(
+                                repo_full_name=repo_full_name,
+                                file_path=rel_path,
+                                line_number=line_num,
+                                action_name=action_name,
+                                detected_version=detected_ver,
+                                latest_version=latest_ver,
+                                is_outdated=True,
+                            )
+                            db = Database()
+                            db.save_repo_mention(mention)
+                            db.close()
+                            logger.warning(
+                                f"Found outdated {action_name}: {detected_ver} < {latest_ver} in {rel_path}:{line_num}"
+                            )
+                except Exception as e:
+                    logger.debug(f"Skipping {rel_path}: {e}")
+
+    except Exception as e:
+        logger.error(f"Error processing {repo_full_name}: {e}")
+
+
 @app.command()
 def scan_repos():
     """Scan popular repositories for outdated action usage."""
@@ -287,48 +325,9 @@ def scan_repos():
     if not Path(settings.temp_dir).exists():
         raise RuntimeError("No cloned repos found. Run fetch-repos first.")
 
-    num_repos = len(known_repos)
-    i = 1
-    for repo_data in known_repos:
-        repo_full_name = repo_data.repo_full_name
-        logger.info(f"({i}/{num_repos}): Scanning https://www.github.com/{repo_full_name}...")
-        i += 1
-        repo_dir = Path(settings.temp_dir) / repo_full_name.replace("/", "_")
-
-        try:
-            for root, _, files in os.walk(repo_dir):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    rel_path = os.path.relpath(file_path, repo_dir)
-                    try:
-                        with open(file_path, "r", errors="ignore") as f:
-                            content = f.read()
-
-                        mentions = scan_file_for_actions(content, list(known_actions.keys()))
-                        for line_num, action_name, detected_ver in mentions:
-                            latest_ver = known_actions[action_name]
-                            if is_major_version_outdated(detected_ver, latest_ver):
-                                mention = RepositoryMention(
-                                    repo_full_name=repo_full_name,
-                                    file_path=rel_path,
-                                    line_number=line_num,
-                                    action_name=action_name,
-                                    detected_version=detected_ver,
-                                    latest_version=latest_ver,
-                                    is_outdated=True,
-                                )
-                                db = Database()
-                                db.save_repo_mention(mention)
-                                db.close()
-                                logger.warning(
-                                    f"Found outdated {action_name}: {detected_ver} < {latest_ver} "
-                                    f"in {rel_path}:{line_num}"
-                                )
-                    except Exception as e:
-                        logger.debug(f"Skipping {rel_path}: {e}")
-
-        except Exception as e:
-            logger.error(f"Error processing {repo_full_name}: {e}")
+    with Pool(processes=cpu_count()) as pool:
+        for _ in tqdm(pool.imap_unordered(_scan_repos, known_repos), total=len(known_repos), desc="Scanning Repos"):
+            pass
 
 
 if __name__ == "__main__":

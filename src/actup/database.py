@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import cache
 
 import duckdb
 
@@ -36,6 +37,7 @@ class Database:
             for r in res
         ]
 
+    @cache
     def get_popular_actions(self) -> list[GitHubAction]:
         """Get all popular actions."""
         res = self.con.execute(
@@ -55,10 +57,11 @@ class Database:
             for r in res
         ]
 
+    @cache
     def get_popular_repos(self) -> list[GitHubRepo]:
         """Get all popular repos."""
         res = self.con.execute(
-            "SELECT * FROM popular_repositories WHERE repo_full_name ",
+            "SELECT * FROM popular_repositories WHERE repo_full_name "
             f"NOT IN ('{"', '".join(settings.exclude_repos)}') ORDER BY stars DESC",
         ).fetchall()
         logger.info(f"Retrieved {len(res)} repos.")
