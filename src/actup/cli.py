@@ -4,10 +4,13 @@ import shutil
 import time
 from collections import defaultdict
 from datetime import datetime
+from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
 import typer
+from git import Repo
 from rich import print
+from tqdm import tqdm
 
 from actup.config import settings
 from actup.database import Database
@@ -154,6 +157,18 @@ def create_prs():
                 shutil.rmtree(repo_dir, ignore_errors=True)
 
 
+def _fetch_repo_contents(repo_data):
+    repo_full_name = repo_data.repo_full_name
+    repo_url = repo_data.clone_url
+    repo_dir = Path(settings.temp_dir) / repo_full_name.replace("/", "_")
+    if repo_dir.exists():
+        logger.info(f"Pulling https://www.github.com/{repo_full_name}...")
+        Repo(repo_dir).remotes.origin.pull()
+    else:
+        logger.info(f"Cloning https://www.github.com/{repo_full_name}...")
+        git_clone_shallow(repo_url, str(repo_dir))
+
+
 @app.command()
 def fetch_repos():
     """Fetch popular repositories contents."""
@@ -163,17 +178,11 @@ def fetch_repos():
     if not known_repos:
         raise RuntimeError("No known repos found. Run find-repos first.")
 
-    num_repos = len(known_repos)
-    i = 1
-    for repo_data in known_repos:
-        repo_full_name = repo_data.repo_full_name
-        logger.info(f"({i}/{num_repos}): Scanning https://www.github.com/{repo_full_name}...")
-        i += 1
-
-        repo_url = repo_data.clone_url
-        repo_dir = Path(settings.temp_dir) / repo_full_name.replace("/", "_")
-        if not repo_dir.exists():
-            git_clone_shallow(repo_url, str(repo_dir))
+    with Pool(processes=cpu_count()) as pool:
+        for _ in tqdm(
+            pool.imap_unordered(_fetch_repo_contents, known_repos), total=len(known_repos), desc="Fetching Repos"
+        ):
+            pass
 
 
 @app.command()

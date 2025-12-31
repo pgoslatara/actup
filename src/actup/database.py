@@ -3,6 +3,7 @@ from datetime import datetime
 import duckdb
 
 from actup.config import settings
+from actup.logger import logger
 from actup.models import GitHubAction, GitHubRepo, PullRequestRecord, RepositoryMention
 
 
@@ -12,7 +13,7 @@ class Database:
     def __init__(self, db_file: str | None = None):
         """Initialize the database connection."""
         self.db_file = db_file or settings.duckdb_file
-        self.con = duckdb.connect()
+        self.con = duckdb.connect(self.db_file)
         self.init_db()
 
     def close(self):
@@ -40,6 +41,7 @@ class Database:
         res = self.con.execute(
             "SELECT * FROM popular_actions WHERE latest_major_version IS NOT NULL ORDER BY stars DESC"
         ).fetchall()
+        logger.info(f"Retrieved {len(res)} actions.")
         return [
             GitHubAction(
                 name=r[0],
@@ -55,7 +57,11 @@ class Database:
 
     def get_popular_repos(self) -> list[GitHubRepo]:
         """Get all popular repos."""
-        res = self.con.execute("SELECT * FROM popular_repositories ORDER BY stars DESC").fetchall()
+        res = self.con.execute(
+            "SELECT * FROM popular_repositories WHERE repo_full_name ",
+            f"NOT IN ('{"', '".join(settings.exclude_repos)}') ORDER BY stars DESC",
+        ).fetchall()
+        logger.info(f"Retrieved {len(res)} repos.")
         return [GitHubRepo(repo_full_name=r[0], clone_url=r[1], stars=int(r[2]), checked_at=r[3]) for r in res]
 
     def init_db(self):
