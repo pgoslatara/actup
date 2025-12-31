@@ -285,9 +285,9 @@ def _scan_repos(repo_data) -> None:
                     with open(file_path, "r", errors="ignore") as f:
                         content = f.read()
 
-                    mentions = scan_file_for_actions(content, list(known_actions.keys()))
+                    mentions = scan_file_for_actions(content, list(known_actions.keys()))  # ty: ignore[unresolved-reference] # noqa: F821
                     for line_num, action_name, detected_ver in mentions:
-                        latest_ver = known_actions[action_name]
+                        latest_ver = known_actions[action_name]  # ty: ignore[unresolved-name, unresolved-reference] # noqa: F821
                         if is_major_version_outdated(detected_ver, latest_ver):
                             mention = RepositoryMention(
                                 repo_full_name=repo_full_name,

@@ -26,11 +26,14 @@ class GitHubClient:
         }
         self.client = httpx.Client(base_url=settings.github_api_base_url, headers=self.headers, timeout=30.0)
 
+    @retry(delay=5, tries=5)
+    def _call_requests(self, headers: dict[str, str], url: str) -> dict[str, str]:
+        r = requests.get(headers=headers, url=url)
+        return r.json()
+
     def _extract_major_version(self, tag: str) -> str | None:
         match = re.match(r"^v?(\d+)(\.\d+)*$", tag)
-        if match:
-            return f"v{match.group(1)}"
-        return None
+        return f"v{match[1]}" if match else None
 
     @retry(delay=10, tries=3)
     def _make_request(self, method: str, path: str, params: dict | None = None, json: dict | None = None) -> Any:
@@ -66,11 +69,11 @@ class GitHubClient:
         while True:
             url = f"https://github.com/marketplace?page={page}&type=actions"
             logger.info(f"Fetching from {url}")
-            marketplace_data = requests.get(headers={"accept": "application/json"}, url=url).json()
+            marketplace_data = self._call_requests(headers={"accept": "application/json"}, url=url)
             for i in marketplace_data["results"]:
-                action_data = requests.get(
+                action_data = self._call_requests(
                     headers={"accept": "application/json"}, url=f"https://github.com/marketplace/actions/{i['slug']}"
-                ).json()
+                )
                 if "error" in action_data:
                     logger.warning(f"Unable to fetch info for {i}.")
                 else:
@@ -93,7 +96,7 @@ class GitHubClient:
     def search_popular_repositories(self, limit) -> list[dict]:
         """Search for popular repositories."""
         repos = []
-        max_stars_count = 1_000_000
+        max_stars_count = 1_000_000_000
         while len(repos) < limit:
             page = 1
             while True:
@@ -108,7 +111,7 @@ class GitHubClient:
                 if page == 10:  # Not sure why page 10 is getting 403 codes, but it is
                     max_stars_count = int(repos[-1]["stargazers_count"])
                     logger.info(f"Resetting max_stars_count to {max_stars_count}.")
-                    time.sleep(30)  # To avoid GitHub returning 403 codes
+                    time.sleep(45)  # To avoid GitHub returning 403 codes
                     break
 
         return repos[:limit]
