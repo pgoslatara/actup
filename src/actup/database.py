@@ -101,12 +101,6 @@ class Database:
             );
         """)
         self.con.execute("""
-            CREATE TABLE IF NOT EXISTS scanned_repositories (
-                full_name VARCHAR PRIMARY KEY,
-                scanned_at TIMESTAMP
-            );
-        """)
-        self.con.execute("""
             CREATE TABLE IF NOT EXISTS pull_requests (
                 repo_full_name VARCHAR,
                 pr_url VARCHAR PRIMARY KEY,

@@ -273,42 +273,46 @@ def reset_db():
 
 def _scan_repos(repo_data) -> None:
     repo_full_name = repo_data.repo_full_name
-    logger.info(f"Scanning https://www.github.com/{repo_full_name}...")
     repo_dir = Path(settings.temp_dir) / repo_full_name.replace("/", "_")
+    if not repo_dir.exists():
+        logger.debug(f"{repo_dir} does not exist, run fetch-repos to clone.")
+    else:
+        logger.info(f"Scanning https://www.github.com/{repo_full_name}...")
 
-    try:
-        for root, _, files in os.walk(repo_dir):
-            for file in files:
-                file_path = os.path.join(root, file)
-                rel_path = os.path.relpath(file_path, repo_dir)
-                try:
-                    with open(file_path, "r", errors="ignore") as f:
-                        content = f.read()
+        try:
+            for root, _, files in os.walk(repo_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(file_path, repo_dir)
+                    try:
+                        with open(file_path, "r", errors="ignore") as f:
+                            content = f.read()
 
-                    mentions = scan_file_for_actions(content, list(known_actions.keys()))  # ty: ignore[unresolved-reference] # noqa: F821
-                    for line_num, action_name, detected_ver in mentions:
-                        latest_ver = known_actions[action_name]  # ty: ignore[unresolved-name, unresolved-reference] # noqa: F821
-                        if is_major_version_outdated(detected_ver, latest_ver):
-                            mention = RepositoryMention(
-                                repo_full_name=repo_full_name,
-                                file_path=rel_path,
-                                line_number=line_num,
-                                action_name=action_name,
-                                detected_version=detected_ver,
-                                latest_version=latest_ver,
-                                is_outdated=True,
-                            )
-                            db = Database()
-                            db.save_repo_mention(mention)
-                            db.close()
-                            logger.warning(
-                                f"Found outdated {action_name}: {detected_ver} < {latest_ver} in {rel_path}:{line_num}"
-                            )
-                except Exception as e:
-                    logger.debug(f"Skipping {rel_path}: {e}")
+                        mentions = scan_file_for_actions(content, list(known_actions.keys()))  # ty: ignore[unresolved-reference] # noqa: F821
+                        for line_num, action_name, detected_ver in mentions:
+                            latest_ver = known_actions[action_name]  # ty: ignore[unresolved-name, unresolved-reference] # noqa: F821
+                            if is_major_version_outdated(detected_ver, latest_ver):
+                                mention = RepositoryMention(
+                                    repo_full_name=repo_full_name,
+                                    file_path=rel_path,
+                                    line_number=line_num,
+                                    action_name=action_name,
+                                    detected_version=detected_ver,
+                                    latest_version=latest_ver,
+                                    is_outdated=True,
+                                )
+                                db = Database()
+                                db.save_repo_mention(mention)
+                                db.close()
+                                logger.warning(
+                                    f"Found outdated {action_name}: {detected_ver}"
+                                    f"< {latest_ver} in {rel_path}:{line_num}"
+                                )
+                    except Exception as e:
+                        logger.debug(f"Skipping {rel_path}: {e}")
 
-    except Exception as e:
-        logger.error(f"Error processing {repo_full_name}: {e}")
+        except Exception as e:
+            logger.error(f"Error processing {repo_full_name}: {e}")
 
 
 @app.command()
