@@ -1,6 +1,7 @@
 __pycache__/
 .venv/
 .pytest_cache/
+.terraform/
 .ruff_cache/
 *.egg-info/
 temp_pr/
@@ -11,3 +12,6 @@ temp_scan/
 *.ipynb
 *.pyc
 coverage.xml
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup

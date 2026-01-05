@@ -94,3 +94,19 @@ Linting:
 ```bash
 make format
 ```
+
+## Terraform
+
+ActUp can be configured to download a lot of GitHub repositories and therefore use a high network bandwidth and, when scanning, generate a high CPU workload. For these reasons it is beneficial to run ActUp on a VM with sufficient resources. In `./terraform`, run the below commands to create a VM in GCP:
+
+```shell
+terraform init
+terraform plan
+terraform apply
+```
+
+Use the outputted command to log in to the VM. Run the following command to configure the VM:
+
+```shell
+bash startup.sh
+```
