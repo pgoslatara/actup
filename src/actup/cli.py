@@ -8,7 +8,8 @@ from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
 import typer
-from git import Repo
+from git import GitCommandError, InvalidGitRepositoryError, Repo
+from retry import retry
 from rich import print
 from tqdm import tqdm
 
@@ -157,13 +158,25 @@ def create_prs():
                 shutil.rmtree(repo_dir, ignore_errors=True)
 
 
+@retry(delay=3, tries=2)
 def _fetch_repo_contents(repo_data):
     repo_full_name = repo_data.repo_full_name
     repo_url = repo_data.clone_url
     repo_dir = Path(settings.temp_dir) / repo_full_name.replace("/", "_")
     if repo_dir.exists():
         logger.info(f"Pulling https://www.github.com/{repo_full_name}...")
-        Repo(repo_dir).remotes.origin.pull()
+        try:
+            Repo(repo_dir).remotes.origin.pull()
+        except GitCommandError as e:
+            logger.warning(e)
+            logger.warning(f"Error pulling {repo_full_name}, deleting and cloning instead...")
+            shutil.rmtree(str(repo_dir))
+            git_clone_shallow(repo_url, str(repo_dir))
+        except InvalidGitRepositoryError as e:
+            logger.warning(e)
+            logger.warning(f"Error encountered {repo_full_name}, deleting and cloning instead...")
+            shutil.rmtree(str(repo_dir))
+            git_clone_shallow(repo_url, str(repo_dir))
     else:
         logger.info(f"Cloning https://www.github.com/{repo_full_name}...")
         git_clone_shallow(repo_url, str(repo_dir))
