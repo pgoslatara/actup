@@ -1,0 +1,13 @@
+__pycache__/
+.cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+temp_pr/
+temp_scan/
+tmp/
+.coverage*
+.env
+actup.duckdb
+coverage.xml
+*.ipynb

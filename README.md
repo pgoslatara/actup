@@ -104,9 +104,3 @@ terraform init
 terraform plan
 terraform apply
 ```
-
-Use the outputted command to log in to the VM. Run the following command to configure the VM:
-
-```shell
-bash startup.sh
-```
