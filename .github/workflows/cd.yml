@@ -24,12 +24,27 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          labels: |
+            org.opencontainers.image.source=${{ github.event.repository.html_url }}
+            org.opencontainers.image.created=${{ github.date }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,enable=true,prefix=
+            type=ref,event=branch
+
       - name: Build image
         uses: docker/build-push-action@v6
         with:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           context: .
+          labels: ${{ steps.meta.outputs.labels }}
           load: false
           push: true
-          tags: actup:latest
+          tags: ${{ steps.meta.outputs.tags }}
