@@ -22,6 +22,10 @@ jobs:
       - name: Install dependencies
         run: make install
 
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.3
+
       - name: Run pre-commit
         run: uv run prek run --all-files
 
