@@ -1,8 +1,5 @@
 duckdb_file: actup.duckdb
-exclude_repo_paths: [.github]
-
 # exclude_repos:
-
 github_api_base_url: https://api.github.com
 pat_github_env_var: PAT_GITHUB
 popular_actions_limit: 8000

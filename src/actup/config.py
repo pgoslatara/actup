@@ -6,7 +6,6 @@ class Config(BaseModel):
     """Configuration settings for the application."""
 
     duckdb_file: str
-    exclude_repo_paths: list[str]
     exclude_repos: list[str] = []
     github_api_base_url: str
     pat_github_env_var: str
