@@ -19,9 +19,16 @@ resource "google_compute_instance" "vm_instance" {
   allow_stopping_for_update = true
   boot_disk {
     initialize_params {
-      image = "docker pull ghcr.io/pgoslatara/actup:latest"
+      image = "projects/cos-cloud/global/images/family/cos-stable"
+      size  = 2048 # 2 TB
+      type  = "pd-ssd"
     }
   }
+  metadata_startup_script = <<EOT
+#!/bin/bash
+# --- Pull and Run the Container Image ---
+docker run --name actup --pull=always -d ghcr.io/pgoslatara/actup:latest
+EOT
   network_interface {
     access_config {}
     network = "default"
@@ -30,18 +37,6 @@ resource "google_compute_instance" "vm_instance" {
   zone = var.zone
 }
 
-resource "google_compute_disk" "ssd_disk" {
-  name    = "ssd-disk"
-  project = var.project_id
-  size    = 2048 # 2 TB
-  type    = "pd-ssd"
-  zone    = var.zone
-}
-
-resource "google_compute_attached_disk" "ssd_attachment" {
-  instance = google_compute_instance.vm_instance.id
-  disk     = google_compute_disk.ssd_disk.id
-}
 resource "google_compute_firewall" "allow_ssh_from_anywhere" {
   project = var.project_id
   name    = "allow-ssh-from-anywhere-to-my-instance"
