@@ -250,7 +250,7 @@ def init_db():
     """Initialize the DuckDB database schema."""
     db = Database()
     db.close()
-    logger.info(f"Database initialized at {settings.duckdb_file}")
+    logger.info(f"Database initialized at {db.db_file}")
 
 
 @app.callback()
@@ -275,15 +275,6 @@ def report():
 
     print(f"\nTotal outdated: {len(mentions)}")
     db.close()
-
-
-@app.command()
-def reset_db():
-    """Delete the DuckDB file and re-initialize."""
-    if Path(settings.duckdb_file).exists:
-        Path(settings.duckdb_file).unlink()
-        logger.warning(f"Deleted {settings.duckdb_file}")
-    init_db()
 
 
 def _scan_repos(repo_data) -> None:

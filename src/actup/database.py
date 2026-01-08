@@ -13,7 +13,7 @@ class Database:
 
     def __init__(self, db_file: str | None = None):
         """Initialize the database connection."""
-        self.db_file = db_file or settings.duckdb_file
+        self.db_file = "./actup.duckdb"
         self.con = duckdb.connect(self.db_file)
         self.init_db()
 
