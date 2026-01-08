@@ -15,7 +15,8 @@ from tqdm import tqdm
 
 from actup.config import settings
 from actup.database import Database
-from actup.github_api import GitHubClient
+from actup.github_api import GitHubAPIClient
+from actup.github_public import GitHubPublicClient
 from actup.logger import logger
 from actup.models import GitHubAction, GitHubRepo, PullRequestRecord, RepositoryMention
 from actup.tracker import update_tracker
@@ -27,7 +28,8 @@ from actup.utils import (
 )
 
 app = typer.Typer()
-client = GitHubClient()
+client_api = GitHubAPIClient()
+client_public = GitHubPublicClient()
 
 
 @app.command()
@@ -45,7 +47,7 @@ def create_prs():
     for mention in outdated:
         repo_updates[mention.repo_full_name].append(mention)
 
-    current_user = client.get_current_user()
+    current_user = client_api.get_current_user()
     temp_dir = Path("temp_pr")
 
     for repo_full_name, mentions in repo_updates.items():
@@ -53,18 +55,18 @@ def create_prs():
         logger.info(f"Processing updates for {repo_full_name}...")
 
         try:
-            target_repo_info = client.get_repo(owner, repo_name)
+            target_repo_info = client_api.get_repo(owner, repo_name)
             default_branch = target_repo_info.get("default_branch", "main")
 
             logger.info("Forking...")
             try:
-                client.create_fork(owner, repo_name)
+                client_api.create_fork(owner, repo_name)
                 time.sleep(5)
             except Exception:
                 logger.info("Fork already exists (or failed), proceeding...")
 
             try:
-                client.sync_fork(current_user, repo_name, default_branch)
+                client_api.sync_fork(current_user, repo_name, default_branch)
                 logger.info("Fork synced with upstream.")
             except Exception as e:
                 logger.warning(f"Could not sync fork: {e}")
@@ -73,7 +75,7 @@ def create_prs():
             repo_dir = temp_dir / repo_full_name.replace("/", "_")
 
             logger.info(f"Cloning fork {fork_url}...")
-            auth_url = fork_url.replace("https://", f"https://{client.token}@")
+            auth_url = fork_url.replace("https://", f"https://{client_api.token}@")
 
             repo = git_clone_shallow(auth_url, str(repo_dir))
 
@@ -128,7 +130,7 @@ def create_prs():
             if confirmation.lower() != "y":
                 raise RuntimeError
 
-            pr = client.create_pull_request(
+            pr = client_api.create_pull_request(
                 owner,
                 repo_name,
                 title=pr_title,
@@ -202,7 +204,7 @@ def fetch_repos():
 def find_actions(limit: int = settings.popular_actions_limit):
     """Fetch popular GitHub Actions and their latest major versions."""
     logger.info(f"Searching for top {limit} popular actions...")
-    actions = client.search_popular_actions(limit)
+    actions = client_public.search_popular_actions(limit)
     db = Database()
     db.truncate_actions()
 
@@ -212,7 +214,7 @@ def find_actions(limit: int = settings.popular_actions_limit):
         repo_name = repo_data["repo"]
         stars = repo_data["stars"]
         latest_version = repo_data["latest_version"]
-        latest_major = client._extract_major_version(latest_version)
+        latest_major = client_api._extract_major_version(latest_version)
         action = GitHubAction(
             name=name,
             owner=owner,
@@ -229,7 +231,7 @@ def find_actions(limit: int = settings.popular_actions_limit):
 def find_repos(limit: int = settings.popular_repos_limit):
     """Find popular repositories."""
     logger.info(f"Searching for top {limit} popular repositories...")
-    repos = client.search_popular_repositories(limit)
+    repos = client_api.search_popular_repositories(limit)
     db = Database()
     db.truncate_repositories()
 

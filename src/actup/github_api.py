@@ -4,14 +4,13 @@ import time
 from typing import Any
 
 import httpx
-import requests
 from retry import retry
 
 from actup.config import settings
 from actup.logger import logger
 
 
-class GitHubClient:
+class GitHubAPIClient:
     """A client for interacting with the GitHub API."""
 
     def __init__(
@@ -25,11 +24,6 @@ class GitHubClient:
             "X-GitHub-Api-Version": "2022-11-28",
         }
         self.client = httpx.Client(base_url=settings.github_api_base_url, headers=self.headers, timeout=30.0)
-
-    @retry(delay=5, tries=5)
-    def _call_requests(self, headers: dict[str, str], url: str) -> dict[str, str]:
-        r = requests.get(headers=headers, url=url)
-        return r.json()
 
     def _extract_major_version(self, tag: str) -> str | None:
         match = re.match(r"^v?(\d+)(\.\d+)*$", tag)
@@ -61,37 +55,6 @@ class GitHubClient:
     def get_repo(self, owner: str, repo: str) -> dict:
         """Get repository information."""
         return self._make_request("GET", f"/repos/{owner}/{repo}")
-
-    def search_popular_actions(self, limit) -> list[dict]:
-        """Search for popular GitHub Actions."""
-        actions = []
-        page = 1
-        while True:
-            url = f"https://github.com/marketplace?page={page}&type=actions"
-            logger.info(f"Fetching from {url}")
-            marketplace_data = self._call_requests(headers={"accept": "application/json"}, url=url)
-            for i in marketplace_data["results"]:
-                action_data = self._call_requests(
-                    headers={"accept": "application/json"}, url=f"https://github.com/marketplace/actions/{i['slug']}"
-                )
-                if "error" in action_data:
-                    logger.warning(f"Unable to fetch info for {i}.")
-                else:
-                    actions.append(
-                        {
-                            "name": i["name"],
-                            "owner": action_data["payload"]["repository"]["owner"],
-                            "repo": action_data["payload"]["repository"]["name"],
-                            "stars": action_data["payload"]["action"]["stars"],
-                            "latest_version": action_data["payload"]["releaseData"]["latestRelease"]["tagName"],
-                        }
-                    )
-
-            if len(actions) > limit:
-                break
-            page += 1
-
-        return actions[:limit]
 
     def search_popular_repositories(self, limit) -> list[dict]:
         """Search for popular repositories."""
