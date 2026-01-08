@@ -14,7 +14,7 @@ provider "google" {
 
 resource "google_compute_instance" "vm_instance" {
   name         = var.instance_name
-  machine_type = "e2-standard-32"
+  machine_type = "custom-32-65536" # 32 CPU, 64 GB RAM
 
   allow_stopping_for_update = true
   boot_disk {
