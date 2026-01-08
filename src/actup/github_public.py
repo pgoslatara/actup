@@ -48,7 +48,7 @@ class GitHubPublicClient:
     def search_popular_actions(self, limit) -> list[dict]:
         """Search for popular GitHub Actions."""
         actions = []
-        page_numbers = list(range(1, int(limit / 20) + 2))
+        page_numbers = [item for item in list(range(1, int(limit / 20) + 2)) if item <= 500]
 
         with Pool(processes=3) as pool:  # Unable to max out as requests will be blocked
             for result in tqdm(
