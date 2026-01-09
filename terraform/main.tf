@@ -27,7 +27,7 @@ resource "google_compute_instance" "vm_instance" {
   metadata_startup_script = <<EOT
 #!/bin/bash
 # --- Pull and Run the Container Image ---
-docker run --name actup --pull=always -d ghcr.io/pgoslatara/actup:latest
+docker pull ghcr.io/pgoslatara/actup:latest
 EOT
   network_interface {
     access_config {}

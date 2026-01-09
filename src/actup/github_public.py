@@ -1,22 +1,33 @@
-from multiprocessing import Pool
+import os
+from multiprocessing import Pool, cpu_count
 
 import requests
 from retry import retry
 from tqdm import tqdm
 
+from actup.config import settings
 from actup.logger import logger
 
 
 class GitHubPublicClient:
-    """A client for interacting with GitHub public APIs."""
+    """A client for interacting with GitHub public APIs.
+
+    Authenticating via a GitHub token increases the number of requests that are tolerated.
+    """
 
     def __init__(
         self,
     ):
         """Initialize the GitHubClient."""
         self.session = requests.session()
+        self.token = os.environ.get(settings.pat_github_env_var)
+        self.headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Accept": "application/json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        }
 
-    @retry(delay=5, tries=5)
+    @retry(delay=10, tries=3)
     def _call_url(self, headers: dict[str, str], url: str) -> dict[str, str]:
         r = self.session.get(headers=headers, url=url)
         return r.json()
@@ -28,7 +39,7 @@ class GitHubPublicClient:
         marketplace_data = self._call_url(headers={"accept": "application/json"}, url=url)
         for i in marketplace_data["results"]:
             action_data = self._call_url(
-                headers={"accept": "application/json"}, url=f"https://github.com/marketplace/actions/{i['slug']}"
+                headers=self.headers, url=f"https://github.com/marketplace/actions/{i['slug']}"
             )
             if "error" in action_data:
                 logger.warning(f"Unable to fetch info for {i}.")
@@ -50,7 +61,7 @@ class GitHubPublicClient:
         actions = []
         page_numbers = [item for item in list(range(1, int(limit / 20) + 2)) if item <= 500]
 
-        with Pool(processes=3) as pool:  # Unable to max out as requests will be blocked
+        with Pool(processes=min(8, cpu_count())) as pool:  # Unable to max out as requests will be blocked
             for result in tqdm(
                 pool.imap_unordered(self._search_popular_actions, page_numbers),
                 total=len(page_numbers),
