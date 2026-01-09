@@ -26,6 +26,7 @@ RUN apt-get update && \
         curl \
         git \
         make \
+        nano \
         unzip \
         wget \
         zsh \
