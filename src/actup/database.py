@@ -62,10 +62,26 @@ class Database:
         """Get all popular repos."""
         res = self.con.execute(
             "SELECT * FROM popular_repositories WHERE repo_full_name "
-            f"NOT IN ('{"', '".join(settings.exclude_repos)}') ORDER BY stars DESC",
+            f"NOT IN ('{"', '".join(settings.exclude_repos)}') "
+            "AND archived IS False "
+            "AND fork IS FALSE "
+            "AND pushed_at >= CURRENT_DATE - INTERVAL '6 months' "
+            "ORDER BY stars DESC",
         ).fetchall()
         logger.info(f"Retrieved {len(res)} repos.")
-        return [GitHubRepo(repo_full_name=r[0], clone_url=r[1], stars=int(r[2]), checked_at=r[3]) for r in res]
+        return [
+            GitHubRepo(
+                repo_full_name=r[0],
+                clone_url=r[1],
+                stars=int(r[2]),
+                archived=r[3],
+                pushed_at=r[4],
+                fork=r[5],
+                size=r[6],
+                checked_at=r[7],
+            )
+            for r in res
+        ]
 
     def init_db(self):
         """Initialise the database tables."""
@@ -97,6 +113,10 @@ class Database:
                 repo_full_name VARCHAR PRIMARY KEY,
                 clone_url VARCHAR,
                 stars INTEGER,
+                archived BOOLEAN,
+                pushed_at TIMESTAMP,
+                fork BOOLEAN,
+                size INTEGER,
                 checked_at TIMESTAMP
             );
         """)
@@ -131,9 +151,18 @@ class Database:
         """Save a popular repos."""
         self.con.execute(
             """
-            INSERT OR REPLACE INTO popular_repositories VALUES (?, ?, ?, ?)
+            INSERT OR REPLACE INTO popular_repositories VALUES (?, ?, ?, ?,?, ?, ?, ?)
         """,
-            (repo.repo_full_name, repo.clone_url, repo.stars, datetime.now()),
+            (
+                repo.repo_full_name,
+                repo.clone_url,
+                repo.stars,
+                repo.archived,
+                repo.pushed_at,
+                repo.fork,
+                repo.size,
+                datetime.now(),
+            ),
         )
 
     def save_pr_record(self, pr: PullRequestRecord):

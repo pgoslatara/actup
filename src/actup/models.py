@@ -16,11 +16,15 @@ class GitHubAction(BaseModel):
 
 
 class GitHubRepo(BaseModel):
-    """Model representing a GitHub Rpository."""
+    """Model representing a GitHub Repository."""
 
     repo_full_name: str
     clone_url: str
     stars: int
+    archived: bool
+    pushed_at: datetime
+    fork: bool
+    size: int
     checked_at: datetime | None = None
 
 

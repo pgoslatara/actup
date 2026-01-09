@@ -239,8 +239,20 @@ def find_repos(limit: int = settings.popular_repos_limit):
         repo_full_name = repo_data["full_name"]
         clone_url = repo_data["clone_url"]
         stars = repo_data["stargazers_count"]
+        archived = repo_data["archived"]
+        pushed_at = repo_data["pushed_at"]
+        fork = repo_data["fork"]
+        size = repo_data["size"]
 
-        action = GitHubRepo(repo_full_name=repo_full_name, clone_url=clone_url, stars=stars)
+        action = GitHubRepo(
+            repo_full_name=repo_full_name,
+            clone_url=clone_url,
+            stars=stars,
+            archived=archived,
+            pushed_at=pushed_at,
+            fork=fork,
+            size=size,
+        )
         db.save_popular_repo(action)
     db.close()
 

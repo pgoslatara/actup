@@ -2,5 +2,5 @@
 github_api_base_url: https://api.github.com
 pat_github_env_var: PAT_GITHUB
 popular_actions_limit: 10000
-popular_repos_limit: 10000
+popular_repos_limit: 120
 temp_dir: temp_scan
