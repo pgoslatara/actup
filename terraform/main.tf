@@ -24,11 +24,6 @@ resource "google_compute_instance" "vm_instance" {
       type  = "pd-ssd"
     }
   }
-  metadata_startup_script = <<EOT
-#!/bin/bash
-# --- Pull and Run the Container Image ---
-docker pull ghcr.io/pgoslatara/actup:latest
-EOT
   network_interface {
     access_config {}
     network = "default"

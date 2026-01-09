@@ -104,3 +104,9 @@ terraform init
 terraform plan
 terraform apply
 ```
+
+To run Actup:
+
+```shell
+docker run -it -e PAT_GITHUB=<TOKEN> --volume "/mnt/stateful_partition":/app/temp_scan ghcr.io/pgoslatara/actup:latest sh
+```
