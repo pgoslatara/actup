@@ -14,13 +14,13 @@ provider "google" {
 
 resource "google_compute_instance" "vm_instance" {
   name         = var.instance_name
-  machine_type = "custom-32-65536" # 32 CPU, 64 GB RAM
+  machine_type = "custom-24-65536" # 32 CPU, 64 GB RAM
 
   allow_stopping_for_update = true
   boot_disk {
     initialize_params {
       image = "projects/cos-cloud/global/images/family/cos-stable"
-      size  = 2048 # 2 TB
+      size  = 4096 # 4 TB
       type  = "pd-ssd"
     }
   }
