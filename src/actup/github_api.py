@@ -6,7 +6,6 @@ from typing import Any
 import httpx
 from retry import retry
 
-from actup.config import settings
 from actup.logger import logger
 
 
@@ -17,13 +16,13 @@ class GitHubAPIClient:
         self,
     ):
         """Initialize the GitHubClient."""
-        self.token = os.environ.get(settings.pat_github_env_var)
+        self.token = os.environ.get("PAT_GITHUB")
         self.headers = {
             "Authorization": f"Bearer {self.token}",
             "Accept": "application/vnd.github.v3+json",
             "X-GitHub-Api-Version": "2022-11-28",
         }
-        self.client = httpx.Client(base_url=settings.github_api_base_url, headers=self.headers, timeout=30.0)
+        self.client = httpx.Client(base_url="https://api.github.com", headers=self.headers, timeout=30.0)
 
     def _extract_major_version(self, tag: str) -> str | None:
         match = re.match(r"^v?(\d+)(\.\d+)*$", tag)

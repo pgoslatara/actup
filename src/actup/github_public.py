@@ -5,7 +5,6 @@ import requests
 from retry import retry
 from tqdm import tqdm
 
-from actup.config import settings
 from actup.logger import logger
 
 
@@ -20,7 +19,7 @@ class GitHubPublicClient:
     ):
         """Initialize the GitHubClient."""
         self.session = requests.session()
-        self.token = os.environ.get(settings.pat_github_env_var)
+        self.token = os.environ.get("PAT_GITHUB")
         self.headers = {
             "Authorization": f"Bearer {self.token}",
             "Accept": "application/json",
@@ -61,7 +60,7 @@ class GitHubPublicClient:
         actions = []
         page_numbers = [item for item in list(range(1, int(limit / 20) + 2)) if item <= 500]
 
-        with Pool(processes=min(8, cpu_count())) as pool:  # Unable to max out as requests will be blocked
+        with Pool(processes=min(4, cpu_count())) as pool:  # Unable to max out as requests will be blocked
             for result in tqdm(
                 pool.imap_unordered(self._search_popular_actions, page_numbers),
                 total=len(page_numbers),

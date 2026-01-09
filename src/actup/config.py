@@ -6,8 +6,6 @@ class Config(BaseModel):
     """Configuration settings for the application."""
 
     exclude_repos: list[str] = []
-    github_api_base_url: str
-    pat_github_env_var: str
     popular_actions_limit: int
     popular_repos_limit: int
     temp_dir: str
