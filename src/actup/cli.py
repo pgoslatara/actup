@@ -7,7 +7,6 @@ from datetime import datetime
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
-import duckdb
 import typer
 from retry import retry
 from rich import print
@@ -18,7 +17,7 @@ from actup.database import Database
 from actup.github_api import GitHubAPIClient
 from actup.github_public import GitHubPublicClient
 from actup.logger import logger
-from actup.models import GitHubAction, GitHubRepo, GitHubUsedAction, PullRequestRecord
+from actup.models import GitHubAction, GitHubRepo, PullRequestRecord
 from actup.tracker import update_tracker
 from actup.utils import (
     git_clone_shallow,
@@ -294,23 +293,8 @@ def scan_repos():
         ):
             pass
 
-    # Gather all used actions and save to database
-    con = duckdb.connect()
-    r = con.execute(f"SELECT * FROM read_json_auto('{Path(settings.temp_dir) / 'action_usage'}')").fetchall()
-    logger.info(f"Parsed {len(r)} used actions.")
     db = Database()
-    for i in r:
-        db.save_used_action(
-            GitHubUsedAction(
-                action_raw=i[0],
-                file_path=i[1],
-                repo_full_name=i[2],
-                action_name=i[3],
-                action_version=i[4],
-                line_number=i[5],
-            )
-        )
-    con.close()
+    db.save_used_actions()
     db.close()
 
 
