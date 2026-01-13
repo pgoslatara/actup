@@ -212,6 +212,14 @@ def find_actions(limit: int = settings.popular_actions_limit):
 
 
 @app.command()
+def find_outdated_actions():
+    """Find outdated actions."""
+    db = Database()
+    db.find_outdated_actions()
+    db.close()
+
+
+@app.command()
 def find_repos(limit: int = settings.popular_repos_limit):
     """Find popular repositories."""
     logger.info(f"Searching for top {limit} popular repositories...")

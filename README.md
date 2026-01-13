@@ -73,6 +73,11 @@ actup fetch-repos
 actup scan-repos
 ```
 
+### Find Outdated Actions
+```bash
+actup find-outdated-actions
+```
+
 ### Create Pull Requests
 ```bash
 actup create-prs

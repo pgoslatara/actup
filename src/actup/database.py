@@ -7,6 +7,7 @@ import duckdb
 from actup.config import settings
 from actup.logger import logger
 from actup.models import GitHubAction, GitHubRepo, PullRequestRecord, RepositoryMention
+from actup.utils import is_major_version_outdated
 
 
 class Database:
@@ -21,6 +22,47 @@ class Database:
     def close(self):
         """Close the database connection."""
         self.con.close()
+
+    def find_outdated_actions(self) -> None:
+        """Save outdated actions."""
+        actions = self.con.query("""
+            SELECT DISTINCT
+                au.repo_full_name,
+                au.action_name,
+                au.action_version,
+                au.filepath,
+                au.line_number,
+                pa.latest_major_version
+            FROM action_usage au
+            LEFT JOIN popular_actions pa ON CONCAT(pa.owner, '/', pa.repo) = au.action_name
+            WHERE
+                SUBSTRING(au.action_version, 1, 1) = 'v'
+                AND au.line_number <> -1 -- Denotes unknowns
+        """).fetchall()
+
+        for i in range(len(actions)):
+            actions[i] = actions[i] + (
+                is_major_version_outdated(detected_version=actions[i][2], latest_version=actions[i][5]),
+            )
+
+        self.con.execute("DROP TABLE IF EXISTS outdated_actions;")
+        self.con.execute("""
+            CREATE TABLE outdated_actions (
+                repo_full_name VARCHAR,
+                action_name VARCHAR,
+                action_version VARCHAR,
+                filepath VARCHAR,
+                line_number INTEGER,
+                latest_major_version VARCHAR,
+                is_outdated BOOLEAN,
+                PRIMARY KEY (repo_full_name, filepath, line_number)
+            );
+        """)
+        self.con.executemany("INSERT INTO outdated_actions VALUES (?, ?, ?, ?, ?, ?, ?);", actions)
+        num_action_usages = self.con.execute(
+            "SELECT COUNT(*) FROM outdated_actions WHERE is_outdated IS TRUE"
+        ).fetchall()[0][0]
+        logger.info(f"Found {num_action_usages} outdated actions. Saved to `outdated_actions`.")
 
     def get_outdated_mentions(self) -> list[RepositoryMention]:
         """Get all outdated action mentions."""
@@ -199,7 +241,7 @@ class Database:
         self.con.execute(f"""
             CREATE OR REPLACE TABLE action_usage AS
             SELECT
-                *
+                DISTINCT *
             FROM read_json_auto('{Path(settings.temp_dir) / "action_usage"}')
         """)
         num_action_usages = self.con.execute("SELECT COUNT(*) FROM action_usage").fetchall()[0][0]

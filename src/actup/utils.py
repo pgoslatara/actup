@@ -62,8 +62,13 @@ def git_clone_sparse(repo_url: str, final_target_dir: str):
 
 def is_major_version_outdated(detected_version: str, latest_version: str) -> bool:
     """Check if the detected version is older than the latest version."""
-    if not detected_version.startswith("v") or not latest_version.startswith("v"):
+    if not detected_version or not latest_version:
         return False
+
+    if isinstance(detected_version, int):
+        detected_version = str(detected_version)
+    if isinstance(latest_version, int):
+        latest_version = str(latest_version)
 
     try:
         detected_major = int(detected_version.lstrip("v").split(".")[0])
@@ -87,19 +92,6 @@ def replace_action_version_in_content(content: str, action_name: str, old_versio
     pattern = f"uses: {action_name}@{old_version}"
     replacement = f"uses: {action_name}@{new_version}"
     return content.replace(pattern, replacement)
-
-
-def scan_file_for_actions(file_content: str, action_list: list[str]) -> list[tuple[int, str, str]]:
-    """Scan file content for actions in the action list."""
-    results = []
-    lines = file_content.splitlines()
-    for i, line in enumerate(lines):
-        parsed = parse_action_version(line)
-        if parsed:
-            name, version = parsed
-            if name in action_list:
-                results.append((i + 1, name, version))
-    return results
 
 
 def scan_file_for_action_line_number(file_content: str, action: str) -> list[tuple[int, str, str]]:
