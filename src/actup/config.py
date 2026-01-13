@@ -8,6 +8,7 @@ class Config(BaseModel):
     exclude_repos: list[str] = []
     popular_actions_limit: int
     popular_repos_limit: int
+    temp_action_usage_dir: str
     temp_dir: str
 
     @classmethod

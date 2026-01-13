@@ -7,8 +7,8 @@ from datetime import datetime
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
+import duckdb
 import typer
-from git import GitCommandError, InvalidGitRepositoryError, Repo
 from retry import retry
 from rich import print
 from tqdm import tqdm
@@ -18,13 +18,13 @@ from actup.database import Database
 from actup.github_api import GitHubAPIClient
 from actup.github_public import GitHubPublicClient
 from actup.logger import logger
-from actup.models import GitHubAction, GitHubRepo, PullRequestRecord, RepositoryMention
+from actup.models import GitHubAction, GitHubRepo, GitHubUsedAction, PullRequestRecord
 from actup.tracker import update_tracker
 from actup.utils import (
     git_clone_shallow,
-    is_major_version_outdated,
+    git_clone_sparse,
     replace_action_version_in_content,
-    scan_file_for_actions,
+    search_and_extract_actions,
 )
 
 app = typer.Typer()
@@ -165,23 +165,8 @@ def _fetch_repo_contents(repo_data):
     repo_full_name = repo_data.repo_full_name
     repo_url = repo_data.clone_url
     repo_dir = Path(settings.temp_dir) / repo_full_name.replace("/", "_")
-    if repo_dir.exists():
-        logger.info(f"Pulling https://www.github.com/{repo_full_name}...")
-        try:
-            Repo(repo_dir).remotes.origin.pull()
-        except GitCommandError as e:
-            logger.warning(e)
-            logger.warning(f"Error pulling {repo_full_name}, deleting and cloning instead...")
-            shutil.rmtree(str(repo_dir))
-            git_clone_shallow(repo_url, str(repo_dir))
-        except InvalidGitRepositoryError as e:
-            logger.warning(e)
-            logger.warning(f"Error encountered {repo_full_name}, deleting and cloning instead...")
-            shutil.rmtree(str(repo_dir))
-            git_clone_shallow(repo_url, str(repo_dir))
-    else:
-        logger.info(f"Cloning https://www.github.com/{repo_full_name}...")
-        git_clone_shallow(repo_url, str(repo_dir))
+    logger.info(f"Cloning https://www.github.com/{repo_full_name}...")
+    git_clone_sparse(repo_url, str(repo_dir))
 
 
 @app.command()
@@ -289,50 +274,6 @@ def report():
     db.close()
 
 
-def _scan_repos(repo_data) -> None:
-    repo_full_name = repo_data.repo_full_name
-    repo_dir = Path(settings.temp_dir) / repo_full_name.replace("/", "_")
-    if not repo_dir.exists():
-        logger.debug(f"{repo_dir} does not exist, run fetch-repos to clone.")
-    else:
-        logger.info(f"Scanning https://www.github.com/{repo_full_name}...")
-
-        try:
-            for root, _, files in os.walk(repo_dir):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    rel_path = os.path.relpath(file_path, repo_dir)
-                    try:
-                        with open(file_path, "r", errors="ignore") as f:
-                            content = f.read()
-
-                        mentions = scan_file_for_actions(content, list(known_actions.keys()))  # ty: ignore[unresolved-reference] # noqa: F821
-                        for line_num, action_name, detected_ver in mentions:
-                            latest_ver = known_actions[action_name]  # ty: ignore[unresolved-name, unresolved-reference] # noqa: F821
-                            if is_major_version_outdated(detected_ver, latest_ver):
-                                mention = RepositoryMention(
-                                    repo_full_name=repo_full_name,
-                                    file_path=rel_path,
-                                    line_number=line_num,
-                                    action_name=action_name,
-                                    detected_version=detected_ver,
-                                    latest_version=latest_ver,
-                                    is_outdated=True,
-                                )
-                                db = Database()
-                                db.save_repo_mention(mention)
-                                db.close()
-                                logger.warning(
-                                    f"Found outdated {action_name}: {detected_ver}"
-                                    f"< {latest_ver} in {rel_path}:{line_num}"
-                                )
-                    except Exception as e:
-                        logger.debug(f"Skipping {rel_path}: {e}")
-
-        except Exception as e:
-            logger.error(f"Error processing {repo_full_name}: {e}")
-
-
 @app.command()
 def scan_repos():
     """Scan popular repositories for outdated action usage."""
@@ -348,8 +289,29 @@ def scan_repos():
         raise RuntimeError("No cloned repos found. Run fetch-repos first.")
 
     with Pool(processes=cpu_count()) as pool:
-        for _ in tqdm(pool.imap_unordered(_scan_repos, known_repos), total=len(known_repos), desc="Scanning Repos"):
+        for _ in tqdm(
+            pool.imap_unordered(search_and_extract_actions, known_repos), total=len(known_repos), desc="Scanning Repos"
+        ):
             pass
+
+    # Gather all used actions and save to database
+    con = duckdb.connect()
+    r = con.execute("SELECT * FROM read_json_auto('./temp_action_usage')").fetchall()
+    logger.info(f"Parsed {len(r)} used actions.")
+    db = Database()
+    for i in r:
+        db.save_used_action(
+            GitHubUsedAction(
+                action_raw=i[0],
+                file_path=i[1],
+                repo_full_name=i[2],
+                action_name=i[3],
+                action_version=i[4],
+                line_number=i[5],
+            )
+        )
+    con.close()
+    db.close()
 
 
 if __name__ == "__main__":

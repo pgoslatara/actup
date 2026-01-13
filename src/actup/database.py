@@ -5,7 +5,7 @@ import duckdb
 
 from actup.config import settings
 from actup.logger import logger
-from actup.models import GitHubAction, GitHubRepo, PullRequestRecord, RepositoryMention
+from actup.models import GitHubAction, GitHubRepo, GitHubUsedAction, PullRequestRecord, RepositoryMention
 
 
 class Database:
@@ -95,6 +95,18 @@ class Database:
                 latest_version VARCHAR,
                 is_outdated BOOLEAN,
                 PRIMARY KEY (repo_full_name, file_path, line_number)
+            );
+        """)
+        self.con.execute("""
+            CREATE TABLE IF NOT EXISTS action_usage (
+                action_raw VARCHAR,
+                file_path VARCHAR,
+                repo_full_name VARCHAR,
+                action_name VARCHAR,
+                action_version VARCHAR,
+                line_number INTEGER,
+                checked_at TIMESTAMP,
+                PRIMARY KEY (repo_full_name, file_path, action_raw, line_number)
             );
         """)
         self.con.execute("""
@@ -188,6 +200,23 @@ class Database:
                 mention.detected_version,
                 mention.latest_version,
                 mention.is_outdated,
+            ),
+        )
+
+    def save_used_action(self, action: GitHubUsedAction):
+        """Save a used action."""
+        self.con.execute(
+            """
+            INSERT OR REPLACE INTO action_usage VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+            (
+                action.action_raw,
+                action.file_path,
+                action.repo_full_name,
+                action.action_name,
+                action.action_version,
+                action.line_number,
+                datetime.now(),
             ),
         )
 

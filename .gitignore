@@ -4,6 +4,7 @@ __pycache__/
 .terraform/
 .ruff_cache/
 *.egg-info/
+temp_action_usage/
 temp_pr/
 temp_scan/
 .coverage
@@ -15,3 +16,4 @@ coverage.xml
 terraform/.terraform.lock.hcl
 terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
+terraform/terraform.tfstate.lock.info

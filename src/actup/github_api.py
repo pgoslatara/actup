@@ -28,7 +28,7 @@ class GitHubAPIClient:
         match = re.match(r"^v?(\d+)(\.\d+)*$", tag)
         return f"v{match[1]}" if match else None
 
-    @retry(delay=10, tries=3)
+    @retry(delay=10, tries=5)
     def _make_request(self, method: str, path: str, params: dict | None = None, json: dict | None = None) -> Any:
         logger.debug(f"Request: {method} {path}")
         response = self.client.request(method, path, params=params, json=json)
@@ -70,10 +70,11 @@ class GitHubAPIClient:
                 if len(repos) > limit:
                     break
                 page += 1
-                if page == 10:  # Not sure why page 10 is getting 403 codes, but it is
+                if page == 11:  # Not sure why page 10 is getting 403 codes, but it is
                     max_stars_count = int(repos[-1]["stargazers_count"])
+                    logger.info(f"Retrieved {len(repos)} repositories...")
                     logger.info(f"Resetting max_stars_count to {max_stars_count}.")
-                    time.sleep(45)  # To avoid GitHub returning 403 codes
+                    time.sleep(60)  # To avoid GitHub returning 403 codes
                     break
 
         return repos[:limit]

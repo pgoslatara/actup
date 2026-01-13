@@ -1,4 +1,5 @@
 # exclude_repos:
-popular_actions_limit: 10000
-popular_repos_limit: 120
+popular_actions_limit: 100
+popular_repos_limit: 250
+temp_action_usage_dir: temp_action_usage
 temp_dir: temp_scan

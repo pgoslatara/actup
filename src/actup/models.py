@@ -28,6 +28,18 @@ class GitHubRepo(BaseModel):
     checked_at: datetime | None = None
 
 
+class GitHubUsedAction(BaseModel):
+    """Model representing a used GitHub Action."""
+
+    action_raw: str
+    file_path: str
+    repo_full_name: str
+    action_name: str
+    action_version: str
+    line_number: int
+    checked_at: datetime | None = None
+
+
 class RepositoryMention(BaseModel):
     """Model representing an action mention in a repository."""
 
