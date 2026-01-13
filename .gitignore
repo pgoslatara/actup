@@ -4,9 +4,7 @@ __pycache__/
 .terraform/
 .ruff_cache/
 *.egg-info/
-temp_action_usage/
-temp_pr/
-temp_scan/
+tmp/
 .coverage
 .env
 *.duckdb

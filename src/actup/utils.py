@@ -118,7 +118,7 @@ def scan_file_for_action_line_number(file_content: str, action: str) -> list[tup
 def search_and_extract_actions(repo_data):
     """Search files for GitHub Actions and extract the used actions."""
     repo_full_name = repo_data.repo_full_name
-    repo_dir = Path(settings.temp_dir) / repo_full_name.replace("/", "_")
+    repo_dir = Path(settings.temp_dir) / "cloned_repos" / repo_full_name.replace("/", "_")
     used_actions = []
 
     if not os.path.exists(repo_dir):
@@ -189,7 +189,7 @@ def search_and_extract_actions(repo_data):
         i["line_number"] = i["line_numbers"][0][0] if i.get("line_numbers") else -1
         i.pop("line_numbers")
 
-    dir = f"./{settings.temp_action_usage_dir}/{repo_full_name}"
+    dir = f"./{settings.temp_dir}/action_usage/{repo_full_name}"
     Path(dir).mkdir(exist_ok=True, parents=True)
     with open(f"{dir}/actions_used.json", "w") as f:
         json.dump(deduplicate_list(used_actions), f)

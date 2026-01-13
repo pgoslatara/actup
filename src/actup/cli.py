@@ -48,7 +48,7 @@ def create_prs():
         repo_updates[mention.repo_full_name].append(mention)
 
     current_user = client_api.get_current_user()
-    temp_dir = Path("temp_pr")
+    temp_dir = Path(settings.temp_dir) / "pr"
 
     for repo_full_name, mentions in repo_updates.items():
         owner, repo_name = repo_full_name.split("/")
@@ -164,7 +164,7 @@ def create_prs():
 def _fetch_repo_contents(repo_data):
     repo_full_name = repo_data.repo_full_name
     repo_url = repo_data.clone_url
-    repo_dir = Path(settings.temp_dir) / repo_full_name.replace("/", "_")
+    repo_dir = Path(settings.temp_dir) / "cloned_repos" / repo_full_name.replace("/", "_")
     logger.info(f"Cloning https://www.github.com/{repo_full_name}...")
     git_clone_sparse(repo_url, str(repo_dir))
 
@@ -285,7 +285,7 @@ def scan_repos():
         raise RuntimeError("No known actions found. Run find-actions first.")
     if not known_repos:
         raise RuntimeError("No known repos found. Run find-repos first.")
-    if not Path(settings.temp_dir).exists():
+    if not (Path(settings.temp_dir) / "cloned_repos").exists():
         raise RuntimeError("No cloned repos found. Run fetch-repos first.")
 
     with Pool(processes=cpu_count()) as pool:
@@ -296,7 +296,7 @@ def scan_repos():
 
     # Gather all used actions and save to database
     con = duckdb.connect()
-    r = con.execute("SELECT * FROM read_json_auto('./temp_action_usage')").fetchall()
+    r = con.execute(f"SELECT * FROM read_json_auto('{Path(settings.temp_dir) / 'action_usage'}')").fetchall()
     logger.info(f"Parsed {len(r)} used actions.")
     db = Database()
     for i in r:
