@@ -1,6 +1,4 @@
 import logging
-import os
-import shutil
 import time
 from collections import defaultdict
 from datetime import datetime
@@ -18,7 +16,6 @@ from actup.github_api import GitHubAPIClient
 from actup.github_public import GitHubPublicClient
 from actup.logger import logger
 from actup.models import GitHubAction, GitHubRepo, PullRequestRecord
-from actup.tracker import update_tracker
 from actup.utils import (
     git_clone_shallow,
     git_clone_sparse,
@@ -39,7 +36,7 @@ def create_prs():
     db.close()
 
     if not outdated:
-        logger.info("No outdated actions found. Did you run scan-repos?")
+        logger.info("No outdated actions found. Did you run find-outdated-actions?")
         return
 
     repo_updates = defaultdict(list)
@@ -53,82 +50,78 @@ def create_prs():
         owner, repo_name = repo_full_name.split("/")
         logger.info(f"Processing updates for {repo_full_name}...")
 
+        target_repo_info = client_api.get_repo(owner, repo_name)
+        default_branch = target_repo_info.get("default_branch", "main")
+        logger.info("Forking...")
         try:
-            target_repo_info = client_api.get_repo(owner, repo_name)
-            default_branch = target_repo_info.get("default_branch", "main")
+            client_api.create_fork(owner, repo_name)
+            time.sleep(5)
+        except Exception:
+            logger.info("Fork already exists (or failed), proceeding...")
 
-            logger.info("Forking...")
-            try:
-                client_api.create_fork(owner, repo_name)
-                time.sleep(5)
-            except Exception:
-                logger.info("Fork already exists (or failed), proceeding...")
+        try:
+            client_api.sync_fork(current_user, repo_name, default_branch)
+            logger.info("Fork synced with upstream.")
+        except Exception as e:
+            logger.warning(f"Could not sync fork: {e}")
 
-            try:
-                client_api.sync_fork(current_user, repo_name, default_branch)
-                logger.info("Fork synced with upstream.")
-            except Exception as e:
-                logger.warning(f"Could not sync fork: {e}")
+        fork_url = f"https://github.com/{current_user}/{repo_name}.git"
+        repo_dir = temp_dir / repo_full_name.replace("/", "_")
 
-            fork_url = f"https://github.com/{current_user}/{repo_name}.git"
-            repo_dir = temp_dir / repo_full_name.replace("/", "_")
+        logger.info(f"Cloning fork {fork_url}...")
+        auth_url = fork_url.replace("https://", f"https://{client_api.token}@")
 
-            logger.info(f"Cloning fork {fork_url}...")
-            auth_url = fork_url.replace("https://", f"https://{client_api.token}@")
+        repo = git_clone_shallow(auth_url, str(repo_dir))
 
-            repo = git_clone_shallow(auth_url, str(repo_dir))
+        branch_name = f"actup/update-actions-{int(datetime.now().timestamp())}"
+        repo.git.checkout("-b", branch_name)
 
-            branch_name = f"actup/update-actions-{int(datetime.now().timestamp())}"
-            repo.git.checkout("-b", branch_name)
+        modified_files = set()
+        for m in mentions:
+            m.file_path = m.file_path.replace("/cloned_repos/", "/pr/")
+            full_path = m.file_path
+            with open(full_path, "r") as f:
+                content = f.read()
 
-            modified_files = set()
-            for m in mentions:
-                full_path = repo_dir / m.file_path
-                with open(full_path, "r") as f:
-                    content = f.read()
-
-                new_content = replace_action_version_in_content(
-                    content, m.action_name, m.detected_version, m.latest_version
-                )
-
-                if new_content != content:
-                    with open(full_path, "w") as f:
-                        f.write(new_content)
-                    modified_files.add(m.file_path)
-
-            if not modified_files:
-                logger.info("No files changed.")
-                continue
-
-            if mentions > 1:
-                pr_title = commit_message = "docs: Update outdated GitHub Actions versions"
-                pr_body = "This PR updates outdated GitHub Action versions.\n\n"
-            else:
-                pr_title = commit_message = "docs: Update outdated GitHub Actions version"
-                pr_body = "This PR updates an outdated GitHub Action version.\n\n"
-
-            repo.index.add(list(modified_files))
-            repo.index.commit(commit_message)
-            logger.info("Pushing...")
-            repo.remote().push(branch_name)
-
-            logger.info("Creating PR...")
-            pr_title = pr_title
-            pr_body = pr_body
-            for m in mentions:
-                pr_body += (
-                    f"- Updated `{m.action_name}` from `{m.detected_version}` "
-                    f"to `{m.latest_version}` in `{m.file_path}`\n"
-                )
-
-            logger.info(
-                f"Visit https://github.com/{repo_full_name}/compare/{default_branch}...{current_user}:",
-                "{repo_full_name.split('/')[1]}:{branch_name}?expand=1 to check PR before creation",
+            new_content = replace_action_version_in_content(
+                content, m.action_name, m.detected_version, m.latest_version
             )
-            confirmation = input("Happy to proceed (Y/N)?")
-            if confirmation.lower() != "y":
-                raise RuntimeError
 
+            if new_content != content:
+                with open(full_path, "w") as f:
+                    f.write(new_content)
+                modified_files.add(m.file_path)
+
+        if not modified_files:
+            logger.info("No files changed.")
+            continue
+
+        if len(mentions) > 1:
+            pr_title = commit_message = "docs: Update outdated GitHub Actions versions"
+            pr_body = "This PR updates outdated GitHub Action versions.\n\n"
+        else:
+            pr_title = commit_message = "docs: Update outdated GitHub Actions version"
+            pr_body = "This PR updates an outdated GitHub Action version.\n\n"
+
+        repo.index.add(["/".join(m.split("/")[3:]) for m in modified_files])
+        repo.index.commit(commit_message)
+        logger.info("Pushing...")
+        repo.remote().push(branch_name)
+
+        logger.info("Creating PR...")
+        pr_title = pr_title
+        pr_body = pr_body
+        for m in mentions:
+            pr_body += (
+                f"- Updated `{m.action_name}` from `{m.detected_version}` to `{m.latest_version}` in `{m.file_path}`\n"
+            )
+
+        logger.info(
+            f"Visit https://github.com/{repo_full_name}/compare/{default_branch}...{current_user}:"
+            f"{repo_full_name.split('/')[1]}:{branch_name}?expand=1 to check PR before creation"
+        )
+        confirmation = input("Happy to proceed (Y/N)?")
+        if confirmation.lower() == "y":
             pr = client_api.create_pull_request(
                 owner,
                 repo_name,
@@ -150,13 +143,11 @@ def create_prs():
             db = Database()
             db.save_pr_record(record)
             db.close()
-            update_tracker(record)
 
-        except Exception as e:
-            logger.error(f"Failed to process {repo_full_name}: {e}")
-        finally:
-            if os.path.exists(repo_dir):
-                shutil.rmtree(repo_dir, ignore_errors=True)
+        # Log to database so we don't re-create PRs
+        db = Database()
+        db.add_repo_to_pr_exclusions(repo_full_name)
+        db.close()
 
 
 @retry(delay=3, tries=2)

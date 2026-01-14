@@ -19,6 +19,15 @@ class Database:
         self.con = duckdb.connect(self.db_file)
         self.init_db()
 
+    def add_repo_to_pr_exclusions(self, repo_full_name: str) -> None:
+        """Add a repo to the pr_exclusions table."""
+        self.con.execute(
+            """
+            INSERT OR REPLACE INTO pull_request_exclusions VALUES (?)
+        """,
+            (repo_full_name,),
+        )
+
     def close(self):
         """Close the database connection."""
         self.con.close()
@@ -66,16 +75,34 @@ class Database:
 
     def get_outdated_mentions(self) -> list[RepositoryMention]:
         """Get all outdated action mentions."""
-        res = self.con.execute("SELECT * FROM action_mentions WHERE is_outdated = true").fetchall()
+        res = self.con.execute("""
+            SELECT
+                oa.*,
+                pr.stars
+            FROM outdated_actions oa
+            LEFT JOIN popular_repositories pr ON pr.repo_full_name = oa.repo_full_name
+            LEFT JOIN pull_request_exclusions pre ON pre.repo_full_name = oa.repo_full_name
+            WHERE
+                oa.is_outdated IS TRUE
+                AND pre.repo_full_name IS NULL -- i.e. Do not include excluded repos
+
+
+                --AND oa.repo_full_name IN ('fast_api/fast_api', 'grafana/grafana')
+
+
+
+            ORDER BY pr.stars desc
+        """).fetchall()
         return [
             RepositoryMention(
                 repo_full_name=r[0],
-                file_path=r[1],
-                line_number=r[2],
-                action_name=r[3],
-                detected_version=r[4],
+                file_path=r[3],
+                line_number=r[4],
+                action_name=r[1],
+                detected_version=r[2],
                 latest_version=r[5],
                 is_outdated=r[6],
+                stars=r[7],
             )
             for r in res
         ]
@@ -170,6 +197,11 @@ class Database:
                 branch_name VARCHAR,
                 created_at TIMESTAMP,
                 status VARCHAR
+            );
+        """)
+        self.con.execute("""
+            CREATE TABLE IF NOT EXISTS pull_request_exclusions (
+                repo_full_name VARCHAR PRIMARY KEY
             );
         """)
 

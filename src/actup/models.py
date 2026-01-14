@@ -49,6 +49,7 @@ class RepositoryMention(BaseModel):
     action_name: str
     detected_version: str
     latest_version: str
+    stars: int
     is_outdated: bool
 
 
