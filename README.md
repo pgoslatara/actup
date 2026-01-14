@@ -4,7 +4,7 @@
 
 # ActUp
 
-Analyse and Update (ActUp) GitHub Action versions in documentation.
+Analyse and Update (ActUp) GitHub Action versions.
 
 [![Python 3.13](https://img.shields.io/badge/Python-3.13-blue.svg?logo=python)](https://www.python.org/downloads/release/python-3130rc1/)
 [![Managed with uv](https://img.shields.io/badge/managed%20with-uv-purple.svg)](https://docs.astral.sh/uv/)
@@ -12,15 +12,13 @@ Analyse and Update (ActUp) GitHub Action versions in documentation.
 
 ## Motivation
 
-Automated workflows on GitHub often use tools like Dependabot or Renovatebot to keep their GitHub Action versions up-to-date. However, external documentation (like `README.md`, `CONTRIBUTING.md`) rarely receives the same automated attention.
-
-**ActUp** proactively identifies these discrepancies, finds the latest stable major versions of commonly used actions, and proposes updates to documentation files across popular GitHub repositories.
+Automated workflows on GitHub often use tools like Dependabot or Renovatebot to keep their GitHub Action versions up-to-date however these are sometimes not kept up to date. **ActUp** proactively identifies these discrepancies, finds the latest stable major versions of commonly used actions, and proposes updates files across popular GitHub repositories.
 
 ## Features
 
 *   **Action Discovery:** Identifies popular GitHub Actions.
 *   **Version Tracking:** Determines the latest major version (v3, v4).
-*   **Doc Scanning:** Scans documentation files for action usage.
+*   **Action Scanning:** Scans Action files for action usage.
 *   **Auto-PR:** Forks, branches, updates, and creates Pull Requests automatically.
 *   **PR Tracking:** Keeps a log of created PRs in `PR_TRACKER.md`.
 
