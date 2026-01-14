@@ -7,7 +7,6 @@ from pathlib import Path
 
 import typer
 from retry import retry
-from rich import print
 from tqdm import tqdm
 
 from actup.config import settings
@@ -16,6 +15,7 @@ from actup.github_api import GitHubAPIClient
 from actup.github_public import GitHubPublicClient
 from actup.logger import logger
 from actup.models import GitHubAction, GitHubRepo, PullRequestRecord
+from actup.tracker import update_pr_statuses, update_tracker
 from actup.utils import (
     git_clone_shallow,
     git_clone_sparse,
@@ -105,7 +105,7 @@ def create_prs():
 
         repo.index.add(["/".join(m.split("/")[3:]) for m in modified_files])
         repo.index.commit(commit_message)
-        logger.info("Pushing...")
+        logger.info(f"Pushing `{branch_name}`...")
         repo.remote().push(branch_name)
 
         logger.info("Creating PR...")
@@ -113,7 +113,8 @@ def create_prs():
         pr_body = pr_body
         for m in mentions:
             pr_body += (
-                f"- Updated `{m.action_name}` from `{m.detected_version}` to `{m.latest_version}` in `{m.file_path}`\n"
+                f"- Updated `{m.action_name}` from `{m.detected_version}` to "
+                f"`{m.latest_version}` in `{'/'.join(m.file_path.split('/')[3:])}`\n"
             )
 
         logger.info(
@@ -131,7 +132,9 @@ def create_prs():
                 base=default_branch,
             )
 
+            logger.info("\n\n")
             logger.info(f"Draft PR created: {pr['html_url']}")
+            logger.info("\n\n")
 
             record = PullRequestRecord(
                 repo_full_name=repo_full_name,
@@ -143,6 +146,7 @@ def create_prs():
             db = Database()
             db.save_pr_record(record)
             db.close()
+            update_tracker(record)
 
         # Log to database so we don't re-create PRs
         db = Database()
@@ -257,19 +261,8 @@ def main(verbose: bool = typer.Option(False, "-v", "--verbose", help="Enable ver
 
 @app.command()
 def report():
-    """Generate a summary of findings."""
-    db = Database()
-    print("[bold]Scanned Actions[/bold]")
-    for action in db.get_popular_actions():
-        print(f"- {action.name}: {action.latest_major_version}")
-
-    print("\n[bold]Outdated Mentions[/bold]")
-    mentions = db.get_outdated_mentions()
-    for m in mentions:
-        print(f"- {m.repo_full_name} ({m.file_path}): {m.action_name} {m.detected_version} -> {m.latest_version}")
-
-    print(f"\nTotal outdated: {len(mentions)}")
-    db.close()
+    """Update the list of created PRs with their status."""
+    update_pr_statuses(client_api)
 
 
 @app.command()

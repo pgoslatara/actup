@@ -85,12 +85,6 @@ class Database:
             WHERE
                 oa.is_outdated IS TRUE
                 AND pre.repo_full_name IS NULL -- i.e. Do not include excluded repos
-
-
-                --AND oa.repo_full_name IN ('fast_api/fast_api', 'grafana/grafana')
-
-
-
             ORDER BY pr.stars desc
         """).fetchall()
         return [

@@ -55,6 +55,10 @@ class GitHubAPIClient:
         """Get repository information."""
         return self._make_request("GET", f"/repos/{owner}/{repo}")
 
+    def get_pull_request_details(self, owner: str, repo: str, number: int) -> dict:
+        """Get pull request details."""
+        return self._make_request("GET", f"/repos/{owner}/{repo}/pulls/{number}")
+
     def search_popular_repositories(self, limit) -> list[dict]:
         """Search for popular repositories."""
         repos = []
