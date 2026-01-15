@@ -19,6 +19,7 @@ from actup.tracker import update_pr_statuses, update_tracker
 from actup.utils import (
     git_clone_shallow,
     git_clone_sparse,
+    merge_pr_body_into_template,
     replace_action_version_in_content,
     search_and_extract_actions,
 )
@@ -117,6 +118,27 @@ def create_prs():
                 f"`{m.latest_version}` in `{'/'.join(m.file_path.split('/')[3:])}`\n"
             )
 
+        # Determine if a PR template exists
+        pr_template_path = None
+        files_in_dot_github = [
+            f.absolute().as_posix().split("/")[-1] for f in (Path(repo_dir) / ".github").iterdir() if f.is_file()
+        ]
+        for f_path in files_in_dot_github:
+            if str(f_path).lower() == "pull_request_template.md":
+                pr_template_path = f_path
+                break
+
+        # Use Ollama to merge PR body with template
+        if pr_template_path:
+            logger.info("Found PR template file, merging changes into template...")
+            with open(repo_dir / ".github" / pr_template_path, "r") as f:
+                pull_request_template_content = f.read()
+
+            pr_body = merge_pr_body_into_template(
+                pr_body=pr_body, pull_request_template_body=pull_request_template_content
+            )
+            logger.info(f"See below the PR body that will be used: \n{pr_body}")
+
         logger.info(
             f"Visit https://github.com/{repo_full_name}/compare/{default_branch}...{current_user}:"
             f"{repo_full_name.split('/')[1]}:{branch_name}?expand=1 to check PR before creation"
@@ -132,9 +154,11 @@ def create_prs():
                 base=default_branch,
             )
 
-            logger.info("\n\n")
+            logger.info("\n")
+            logger.info(">>>>>>>>>>>>>>>>>>>>>.")
             logger.info(f"Draft PR created: {pr['html_url']}")
-            logger.info("\n\n")
+            logger.info(">>>>>>>>>>>>>>>>>>>>>.")
+            logger.info("\n")
 
             record = PullRequestRecord(
                 repo_full_name=repo_full_name,

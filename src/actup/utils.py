@@ -4,6 +4,7 @@ import re
 import shutil
 from pathlib import Path
 
+import ollama
 import yaml
 from git import Repo
 
@@ -76,6 +77,49 @@ def is_major_version_outdated(detected_version: str, latest_version: str) -> boo
         return detected_major < latest_major
     except ValueError:
         return False
+
+
+def load_ollama_model(model_name: str) -> None:
+    """Load the Ollama model, If not already present, download it."""
+    logger.debug(f"Attempting to pull model: {model_name}. This may take a while if not cached.")
+    pull_response = ollama.pull(model_name, stream=True)
+    for chunk in pull_response:
+        if "status" in chunk:
+            logger.debug(f"Pull Status: {chunk['status']}")
+
+
+def merge_pr_body_into_template(pr_body: str, pull_request_template_body: str) -> str:
+    """Ue Ollama to populate the PR template."""
+    model_name = "qwen3:1.7b"
+    prompt = f"""
+    You are a software engineer who is updating the version of actions used in GitHub Action workflows. You are creating a pull request in an open source GitHub repository that has a pull request template. Your job is to merge this template with the description of your changes. Return a markdown formatted response that correctly fills in the pull request template as best you can while at the same time correctly describing your changes.
+
+    Here is the pull request template:
+    {pull_request_template_body}
+
+    Here are the changes you want to make:
+    {pr_body}
+
+    Constraints:
+    * Do not return anything that isn't markdown formatted.
+    * Do not make up information.
+    * Do not alter the format of the pull request template.
+    * If you need to specify how the changes will be tested, state that they will be tested in the CI pipeline of the pull request.
+    * If you see boxes like this "[ ]", then fill them in like "[x]" if they are completed (for example, having an accurate PR title, detailing the changes in the PR description, etc.).
+    """  # noqa: E501
+
+    load_ollama_model(model_name=model_name)
+    logger.info("Sending request to Ollama...")
+    response = ollama.generate(
+        model=model_name,
+        options={
+            "format": "json",
+        },
+        prompt=prompt,
+        stream=False,
+    ).response
+    logger.info("Response received from Ollama...")
+    return response
 
 
 def parse_action_version(action_line: str) -> tuple[str, str] | None:
