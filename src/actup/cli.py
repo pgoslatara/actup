@@ -1,4 +1,5 @@
 import logging
+import shutil
 import time
 from collections import defaultdict
 from datetime import datetime
@@ -68,6 +69,8 @@ def create_prs():
 
         fork_url = f"https://github.com/{current_user}/{repo_name}.git"
         repo_dir = temp_dir / repo_full_name.replace("/", "_")
+        if repo_dir.exists():
+            shutil.rmtree(repo_dir)
 
         logger.info(f"Cloning fork {fork_url}...")
         auth_url = fork_url.replace("https://", f"https://{client_api.token}@")
@@ -128,8 +131,13 @@ def create_prs():
                 pr_template_path = f_path
                 break
 
+        logger.info(
+            f"Visit https://github.com/{repo_full_name}/compare/{default_branch}...{current_user}:"
+            f"{repo_full_name.split('/')[1]}:{branch_name}?expand=1 to check PR before creation"
+        )
+
         # Use Ollama to merge PR body with template
-        if pr_template_path:
+        if pr_template_path and input("Generate PR body using Ollama (Y/N)?").lower() == "y":
             logger.info("Found PR template file, merging changes into template...")
             with open(repo_dir / ".github" / pr_template_path, "r") as f:
                 pull_request_template_content = f.read()
@@ -139,11 +147,7 @@ def create_prs():
             )
             logger.info(f"See below the PR body that will be used: \n{pr_body}")
 
-        logger.info(
-            f"Visit https://github.com/{repo_full_name}/compare/{default_branch}...{current_user}:"
-            f"{repo_full_name.split('/')[1]}:{branch_name}?expand=1 to check PR before creation"
-        )
-        confirmation = input("Happy to proceed (Y/N)?")
+        confirmation = input("Happy for PR to be created (Y/N)?")
         if confirmation.lower() == "y":
             pr = client_api.create_pull_request(
                 owner,
@@ -176,6 +180,7 @@ def create_prs():
         db = Database()
         db.add_repo_to_pr_exclusions(repo_full_name)
         db.close()
+        shutil.rmtree(repo_dir)
 
 
 @retry(delay=3, tries=2)
