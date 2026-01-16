@@ -101,10 +101,10 @@ def create_prs():
             continue
 
         if len(mentions) > 1:
-            pr_title = commit_message = "docs: Update outdated GitHub Actions versions"
+            pr_title = commit_message = "chore: Update outdated GitHub Actions versions"
             pr_body = "This PR updates outdated GitHub Action versions.\n\n"
         else:
-            pr_title = commit_message = "docs: Update outdated GitHub Actions version"
+            pr_title = commit_message = "chore: Update outdated GitHub Actions version"
             pr_body = "This PR updates an outdated GitHub Action version.\n\n"
 
         repo.index.add(["/".join(m.split("/")[3:]) for m in modified_files])
