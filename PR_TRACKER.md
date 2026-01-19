@@ -9,9 +9,9 @@
 | 2026-01-14 | jwasham/coding-interview-university | [https://github.com/jwasham/coding-interview-university/pull/2062](https://github.com/jwasham/coding-interview-university/pull/2062) | open |
 | 2026-01-14 | vinta/awesome-python | [https://github.com/vinta/awesome-python/pull/2860](https://github.com/vinta/awesome-python/pull/2860) | merged |
 | 2026-01-15 | trekhleb/javascript-algorithms | [https://github.com/trekhleb/javascript-algorithms/pull/2097](https://github.com/trekhleb/javascript-algorithms/pull/2097) | open |
-| 2026-01-15 | Significant-Gravitas/AutoGPT | [https://github.com/Significant-Gravitas/AutoGPT/pull/11774](https://github.com/Significant-Gravitas/AutoGPT/pull/11774) | open |
+| 2026-01-15 | Significant-Gravitas/AutoGPT | [https://github.com/Significant-Gravitas/AutoGPT/pull/11774](https://github.com/Significant-Gravitas/AutoGPT/pull/11774) | closed |
 | 2026-01-15 | n8n-io/n8n | [https://github.com/n8n-io/n8n/pull/24385](https://github.com/n8n-io/n8n/pull/24385) | open |
-| 2026-01-15 | avelino/awesome-go | [https://github.com/avelino/awesome-go/pull/5991](https://github.com/avelino/awesome-go/pull/5991) | open |
+| 2026-01-15 | avelino/awesome-go | [https://github.com/avelino/awesome-go/pull/5991](https://github.com/avelino/awesome-go/pull/5991) | merged |
 | 2026-01-15 | AUTOMATIC1111/stable-diffusion-webui | [https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/17249](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/17249) | open |
 | 2026-01-15 | ollama/ollama | [https://github.com/ollama/ollama/pull/13734](https://github.com/ollama/ollama/pull/13734) | open |
 | 2026-01-15 | Snailclimb/JavaGuide | [https://github.com/Snailclimb/JavaGuide/pull/2775](https://github.com/Snailclimb/JavaGuide/pull/2775) | merged |
@@ -19,11 +19,11 @@
 | 2026-01-15 | langflow-ai/langflow | [https://github.com/langflow-ai/langflow/pull/11316](https://github.com/langflow-ai/langflow/pull/11316) | open |
 | 2026-01-15 | f/awesome-chatgpt-prompts | [https://github.com/f/awesome-chatgpt-prompts/pull/1007](https://github.com/f/awesome-chatgpt-prompts/pull/1007) | merged |
 | 2026-01-15 | ytdl-org/youtube-dl | [https://github.com/ytdl-org/youtube-dl/pull/33237](https://github.com/ytdl-org/youtube-dl/pull/33237) | open |
-| 2026-01-16 | yangshun/tech-interview-handbook | [https://github.com/yangshun/tech-interview-handbook/pull/729](https://github.com/yangshun/tech-interview-handbook/pull/729) | open |
+| 2026-01-16 | yangshun/tech-interview-handbook | [https://github.com/yangshun/tech-interview-handbook/pull/729](https://github.com/yangshun/tech-interview-handbook/pull/729) | merged |
 | 2026-01-16 | Genymobile/scrcpy | [https://github.com/Genymobile/scrcpy/pull/6610](https://github.com/Genymobile/scrcpy/pull/6610) | open |
-| 2026-01-16 | langgenius/dify | [https://github.com/langgenius/dify/pull/31114](https://github.com/langgenius/dify/pull/31114) | open |
+| 2026-01-16 | langgenius/dify | [https://github.com/langgenius/dify/pull/31114](https://github.com/langgenius/dify/pull/31114) | merged |
 | 2026-01-16 | krahets/hello-algo | [https://github.com/krahets/hello-algo/pull/1848](https://github.com/krahets/hello-algo/pull/1848) | open |
-| 2026-01-16 | open-webui/open-webui | [https://github.com/open-webui/open-webui/pull/20720](https://github.com/open-webui/open-webui/pull/20720) | open |
+| 2026-01-16 | open-webui/open-webui | [https://github.com/open-webui/open-webui/pull/20720](https://github.com/open-webui/open-webui/pull/20720) | closed |
 | 2026-01-16 | d3/d3 | [https://github.com/d3/d3/pull/4091](https://github.com/d3/d3/pull/4091) | open |
 | 2026-01-16 | iptv-org/iptv | [https://github.com/iptv-org/iptv/pull/32024](https://github.com/iptv-org/iptv/pull/32024) | open |
 | 2026-01-16 | denoland/deno | [https://github.com/denoland/deno/pull/31859](https://github.com/denoland/deno/pull/31859) | open |
