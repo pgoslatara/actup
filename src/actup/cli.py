@@ -150,52 +150,64 @@ def create_prs():
                     logger.info(f"{i['html_url']}: {i['title']}")
                     already_seen_prs.append(i["number"])
 
-        # Use Ollama to merge PR body with template
-        if pr_template_path:
-            logger.info("Found PR template file, merging changes into template...")
-            with open(repo_dir / ".github" / pr_template_path, "r") as f:
-                pull_request_template_content = f.read()
+        # Look for PRs that already do what ActUp is doing
+        create_pr = True
+        for i in relevant_prs:
+            if i["title"].find("Bump the github-actions group") == 0 or i["title"].find("(deps): bump actions/") > 0:
+                create_pr = False
+                logger.info(f"PR {i['number']} already updates GitHub Actions so not creating any PR.")
 
-            pr_body = merge_pr_body_into_template(
-                pr_body=pr_body, pull_request_template_body=pull_request_template_content
-            )
-            logger.info(f"See below the PR body that will be used: \n{pr_body}")
+        if create_pr:
+            # Use Ollama to merge PR body with template
+            if pr_template_path:
+                logger.info("Found PR template file, merging changes into template...")
+                with open(repo_dir / ".github" / pr_template_path, "r") as f:
+                    pull_request_template_content = f.read()
 
-        confirmation = input("Happy for PR to be created (Y/N)?")
-        if confirmation.lower() == "y":
-            pr = client_api.create_pull_request(
-                owner,
-                repo_name,
-                title=pr_title,
-                body=pr_body,
-                head=f"{current_user}:{branch_name}",
-                base=default_branch,
-            )
+                pr_body = merge_pr_body_into_template(
+                    pr_body=pr_body, pull_request_template_body=pull_request_template_content
+                )
+                logger.info(f"See below the PR body that will be used: \n{pr_body}")
 
-            logger.info("\n")
-            logger.info(">>>>>>>>>>>>>>>>>>>>>.")
-            logger.info(f"Draft PR created: {pr['html_url']}")
-            logger.info(">>>>>>>>>>>>>>>>>>>>>.")
-            logger.info("\n")
-            webbrowser.open(pr["html_url"])
+            confirmation = input("Happy for PR to be created (Y/N)?")
+            if confirmation.lower() == "y":
+                pr = client_api.create_pull_request(
+                    owner,
+                    repo_name,
+                    title=pr_title,
+                    body=pr_body,
+                    head=f"{current_user}:{branch_name}",
+                    base=default_branch,
+                )
 
-            record = PullRequestRecord(
-                repo_full_name=repo_full_name,
-                pr_url=pr["html_url"],
-                branch_name=branch_name,
-                created_at=datetime.now(),
-                status=pr["state"],
-            )
+                logger.info("\n")
+                logger.info(">>>>>>>>>>>>>>>>>>>>>.")
+                logger.info(f"Draft PR created: {pr['html_url']}")
+                logger.info(">>>>>>>>>>>>>>>>>>>>>.")
+                logger.info("\n")
+                webbrowser.open(pr["html_url"])
+
+                record = PullRequestRecord(
+                    repo_full_name=repo_full_name,
+                    pr_url=pr["html_url"],
+                    branch_name=branch_name,
+                    created_at=datetime.now(),
+                    status=pr["state"],
+                )
+                db = Database()
+                db.save_pr_record(record)
+                db.close()
+                update_tracker(record)
+
+            # Log to database so we don't re-create PRs
             db = Database()
-            db.save_pr_record(record)
+            db.add_repo_to_pr_exclusions(repo_full_name)
             db.close()
-            update_tracker(record)
-
-        # Log to database so we don't re-create PRs
-        db = Database()
-        db.add_repo_to_pr_exclusions(repo_full_name)
-        db.close()
-        shutil.rmtree(repo_dir)
+            shutil.rmtree(repo_dir)
+        else:
+            db = Database()
+            db.add_repo_to_pr_exclusions(repo_full_name)
+            db.close()
 
 
 @retry(delay=3, tries=2)

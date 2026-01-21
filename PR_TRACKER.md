@@ -54,7 +54,7 @@
 | 2026-01-20 | syncthing/syncthing | [https://github.com/syncthing/syncthing/pull/10534](https://github.com/syncthing/syncthing/pull/10534) | closed |
 | 2026-01-20 | doocs/advanced-java | [https://github.com/doocs/advanced-java/pull/331](https://github.com/doocs/advanced-java/pull/331) | open |
 | 2026-01-20 | hoppscotch/hoppscotch | [https://github.com/hoppscotch/hoppscotch/pull/5788](https://github.com/hoppscotch/hoppscotch/pull/5788) | open |
-| 2026-01-20 | modelcontextprotocol/servers | [https://github.com/modelcontextprotocol/servers/pull/3233](https://github.com/modelcontextprotocol/servers/pull/3233) | open |
+| 2026-01-20 | modelcontextprotocol/servers | [https://github.com/modelcontextprotocol/servers/pull/3233](https://github.com/modelcontextprotocol/servers/pull/3233) | merged |
 | 2026-01-20 | elastic/elasticsearch | [https://github.com/elastic/elasticsearch/pull/140955](https://github.com/elastic/elasticsearch/pull/140955) | open |
 | 2026-01-20 | typicode/json-server | [https://github.com/typicode/json-server/pull/1677](https://github.com/typicode/json-server/pull/1677) | merged |
 | 2026-01-20 | browser-use/browser-use | [https://github.com/browser-use/browser-use/pull/3907](https://github.com/browser-use/browser-use/pull/3907) | open |
@@ -65,7 +65,7 @@
 | 2026-01-20 | zed-industries/zed | [https://github.com/zed-industries/zed/pull/47216](https://github.com/zed-industries/zed/pull/47216) | closed |
 | 2026-01-20 | localsend/localsend | [https://github.com/localsend/localsend/pull/2913](https://github.com/localsend/localsend/pull/2913) | open |
 | 2026-01-20 | sherlock-project/sherlock | [https://github.com/sherlock-project/sherlock/pull/2792](https://github.com/sherlock-project/sherlock/pull/2792) | open |
-| 2026-01-20 | moby/moby | [https://github.com/moby/moby/pull/51879](https://github.com/moby/moby/pull/51879) | open |
+| 2026-01-20 | moby/moby | [https://github.com/moby/moby/pull/51879](https://github.com/moby/moby/pull/51879) | merged |
 | 2026-01-21 | python/cpython | [https://github.com/python/cpython/pull/144103](https://github.com/python/cpython/pull/144103) | open |
 | 2026-01-21 | strapi/strapi | [https://github.com/strapi/strapi/pull/25233](https://github.com/strapi/strapi/pull/25233) | open |
 | 2026-01-21 | openai/openai-cookbook | [https://github.com/openai/openai-cookbook/pull/2392](https://github.com/openai/openai-cookbook/pull/2392) | open |
@@ -73,3 +73,12 @@
 | 2026-01-21 | PKUFlyingPig/cs-self-learning | [https://github.com/PKUFlyingPig/cs-self-learning/pull/831](https://github.com/PKUFlyingPig/cs-self-learning/pull/831) | open |
 | 2026-01-21 | jesseduffield/lazygit | [https://github.com/jesseduffield/lazygit/pull/5220](https://github.com/jesseduffield/lazygit/pull/5220) | open |
 | 2026-01-21 | hakimel/reveal.js | [https://github.com/hakimel/reveal.js/pull/3850](https://github.com/hakimel/reveal.js/pull/3850) | open |
+| 2026-01-21 | apache/superset | [https://github.com/apache/superset/pull/37305](https://github.com/apache/superset/pull/37305) | open |
+| 2026-01-21 | binary-husky/gpt_academic | [https://github.com/binary-husky/gpt_academic/pull/2232](https://github.com/binary-husky/gpt_academic/pull/2232) | open |
+| 2026-01-21 | obsproject/obs-studio | [https://github.com/obsproject/obs-studio/pull/13054](https://github.com/obsproject/obs-studio/pull/13054) | open |
+| 2026-01-21 | dair-ai/Prompt-Engineering-Guide | [https://github.com/dair-ai/Prompt-Engineering-Guide/pull/723](https://github.com/dair-ai/Prompt-Engineering-Guide/pull/723) | open |
+| 2026-01-21 | AppFlowy-IO/AppFlowy | [https://github.com/AppFlowy-IO/AppFlowy/pull/8443](https://github.com/AppFlowy-IO/AppFlowy/pull/8443) | open |
+| 2026-01-21 | leonardomso/33-js-concepts | [https://github.com/leonardomso/33-js-concepts/pull/647](https://github.com/leonardomso/33-js-concepts/pull/647) | open |
+| 2026-01-21 | xtekky/gpt4free | [https://github.com/xtekky/gpt4free/pull/3333](https://github.com/xtekky/gpt4free/pull/3333) | merged |
+| 2026-01-21 | hiyouga/LlamaFactory | [https://github.com/hiyouga/LlamaFactory/pull/10123](https://github.com/hiyouga/LlamaFactory/pull/10123) | open |
+| 2026-01-21 | chrislgarry/Apollo-11 | [https://github.com/chrislgarry/Apollo-11/pull/963](https://github.com/chrislgarry/Apollo-11/pull/963) | open |
