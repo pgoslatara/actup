@@ -46,6 +46,64 @@ class GitHubAPIClient:
         data = {"title": title, "body": body, "head": head, "base": base, "draft": True}
         return self._make_request("POST", f"/repos/{owner}/{repo}/pulls", json=data)
 
+    def find_workflow_yaml_prs(self, repo_full_name: str) -> list[dict]:
+        """Identify relevant pull requests.
+
+        Only looks at PRs that modify YAML files in the .github/workflows directory.
+        """
+        modified_prs_info = []
+        params = {"state": "open", "per_page": 100}
+        all_prs = []
+        page = 1
+        while True:
+            paged_params = {**params, "page": page}
+            response = self._make_request(method="get", path=f"repos/{repo_full_name}/pulls", params=paged_params)
+            if not response:
+                break
+            all_prs.extend(response)
+            page += 1
+
+        if not all_prs:
+            logger.info(f"No open pull requests found for {repo_full_name}.")
+            return []
+        else:
+            logger.info(f"Found {len(all_prs)} open pull requests for {repo_full_name}.")
+
+        for pr in all_prs:
+            pr_number = pr["number"]
+            pr_title = pr["title"]
+            pr_html_url = pr["html_url"]
+            files_params = {"per_page": 100}
+            pr_files = []
+            files_page = 1
+            while True:
+                paged_files_params = {**files_params, "page": files_page}
+                files_response = self._make_request(
+                    method="get", path=f"repos/{repo_full_name}/pulls/{pr_number}/files", params=paged_files_params
+                )
+                if not files_response:
+                    break
+                pr_files.extend(files_response)
+                files_page += 1
+
+            for file in pr_files:
+                file_name = file.get("filename")
+                if (
+                    file_name
+                    and file_name.startswith(".github/workflows/")
+                    and (file_name.endswith(".yml") or file_name.endswith(".yaml"))
+                ):
+                    modified_prs_info.append(
+                        {"number": pr_number, "title": pr_title, "html_url": pr_html_url, "file_modified": file_name}
+                    )
+
+        logger.info("\n")
+        logger.info(
+            f"Found {len({i['number'] for i in modified_prs_info})} open pull requests"
+            f" for {repo_full_name} that modify `.github/workflows` files."
+        )
+        return modified_prs_info
+
     def get_current_user(self) -> str:
         """Get the authenticated user's login."""
         user = self._make_request("GET", "/user")

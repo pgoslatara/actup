@@ -1,6 +1,7 @@
 import logging
 import shutil
 import time
+import webbrowser
 from collections import defaultdict
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
@@ -98,6 +99,9 @@ def create_prs():
 
         if not modified_files:
             logger.info("No files changed.")
+            db = Database()
+            db.add_repo_to_pr_exclusions(repo_full_name)
+            db.close()
             continue
 
         if len(mentions) > 1:
@@ -131,13 +135,23 @@ def create_prs():
                 pr_template_path = f_path
                 break
 
-        logger.info(
-            f"Visit https://github.com/{repo_full_name}/compare/{default_branch}...{current_user}:"
-            f"{repo_full_name.split('/')[1]}:{branch_name}?expand=1 to check PR before creation"
+        wip_pr_url = (
+            f"https://github.com/{repo_full_name}/compare/{default_branch}...{current_user}:"
+            f"{repo_full_name.split('/')[1]}:{branch_name}?expand=1"
         )
+        logger.info(f"Visit {wip_pr_url} to check PR before creation")
+        webbrowser.open(wip_pr_url)
+
+        if relevant_prs := client_api.find_workflow_yaml_prs(repo_full_name=repo_full_name):
+            logger.info("The following PRs relate to `.github/workflows`, please take a look prior to creating a PR:")
+            already_seen_prs = []
+            for i in relevant_prs:
+                if i["number"] not in already_seen_prs:
+                    logger.info(f"{i['html_url']}: {i['title']}")
+                    already_seen_prs.append(i["number"])
 
         # Use Ollama to merge PR body with template
-        if pr_template_path and input("Generate PR body using Ollama (Y/N)?").lower() == "y":
+        if pr_template_path:
             logger.info("Found PR template file, merging changes into template...")
             with open(repo_dir / ".github" / pr_template_path, "r") as f:
                 pull_request_template_content = f.read()
@@ -163,6 +177,7 @@ def create_prs():
             logger.info(f"Draft PR created: {pr['html_url']}")
             logger.info(">>>>>>>>>>>>>>>>>>>>>.")
             logger.info("\n")
+            webbrowser.open(pr["html_url"])
 
             record = PullRequestRecord(
                 repo_full_name=repo_full_name,
