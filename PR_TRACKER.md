@@ -82,3 +82,13 @@
 | 2026-01-21 | xtekky/gpt4free | [https://github.com/xtekky/gpt4free/pull/3333](https://github.com/xtekky/gpt4free/pull/3333) | merged |
 | 2026-01-21 | hiyouga/LlamaFactory | [https://github.com/hiyouga/LlamaFactory/pull/10123](https://github.com/hiyouga/LlamaFactory/pull/10123) | open |
 | 2026-01-21 | chrislgarry/Apollo-11 | [https://github.com/chrislgarry/Apollo-11/pull/963](https://github.com/chrislgarry/Apollo-11/pull/963) | merged |
+| 2026-01-22 | FoundationAgents/MetaGPT | [https://github.com/FoundationAgents/MetaGPT/pull/1918](https://github.com/FoundationAgents/MetaGPT/pull/1918) | open |
+| 2026-01-22 | socketio/socket.io | [https://github.com/socketio/socket.io/pull/5449](https://github.com/socketio/socket.io/pull/5449) | open |
+| 2026-01-22 | github/spec-kit | [https://github.com/github/spec-kit/pull/1508](https://github.com/github/spec-kit/pull/1508) | open |
+| 2026-01-22 | FuelLabs/sway | [https://github.com/FuelLabs/sway/pull/7537](https://github.com/FuelLabs/sway/pull/7537) | open |
+| 2026-01-22 | alacritty/alacritty | [https://github.com/alacritty/alacritty/pull/8824](https://github.com/alacritty/alacritty/pull/8824) | open |
+| 2026-01-22 | openinterpreter/open-interpreter | [https://github.com/openinterpreter/open-interpreter/pull/1680](https://github.com/openinterpreter/open-interpreter/pull/1680) | open |
+| 2026-01-22 | lodash/lodash | [https://github.com/lodash/lodash/pull/6093](https://github.com/lodash/lodash/pull/6093) | open |
+| 2026-01-22 | reduxjs/redux | [https://github.com/reduxjs/redux/pull/4838](https://github.com/reduxjs/redux/pull/4838) | open |
+| 2026-01-22 | rust-lang/rustlings | [https://github.com/rust-lang/rustlings/pull/2335](https://github.com/rust-lang/rustlings/pull/2335) | open |
+| 2026-01-22 | nocodb/nocodb | [https://github.com/nocodb/nocodb/pull/12921](https://github.com/nocodb/nocodb/pull/12921) | open |
