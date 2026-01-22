@@ -80,6 +80,7 @@
 | 2026-01-21 | AppFlowy-IO/AppFlowy | [https://github.com/AppFlowy-IO/AppFlowy/pull/8443](https://github.com/AppFlowy-IO/AppFlowy/pull/8443) | open |
 | 2026-01-21 | leonardomso/33-js-concepts | [https://github.com/leonardomso/33-js-concepts/pull/647](https://github.com/leonardomso/33-js-concepts/pull/647) | open |
 | 2026-01-21 | xtekky/gpt4free | [https://github.com/xtekky/gpt4free/pull/3333](https://github.com/xtekky/gpt4free/pull/3333) | merged |
+| 2026-01-21 | apache/echarts | [https://github.com/apache/echarts/pull/21847](https://github.com/apache/echarts/pull/21487) | merged |
 | 2026-01-21 | hiyouga/LlamaFactory | [https://github.com/hiyouga/LlamaFactory/pull/10123](https://github.com/hiyouga/LlamaFactory/pull/10123) | open |
 | 2026-01-21 | chrislgarry/Apollo-11 | [https://github.com/chrislgarry/Apollo-11/pull/963](https://github.com/chrislgarry/Apollo-11/pull/963) | merged |
 | 2026-01-22 | FoundationAgents/MetaGPT | [https://github.com/FoundationAgents/MetaGPT/pull/1918](https://github.com/FoundationAgents/MetaGPT/pull/1918) | open |
