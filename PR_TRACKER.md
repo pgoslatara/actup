@@ -89,6 +89,6 @@
 | 2026-01-22 | alacritty/alacritty | [https://github.com/alacritty/alacritty/pull/8824](https://github.com/alacritty/alacritty/pull/8824) | open |
 | 2026-01-22 | openinterpreter/open-interpreter | [https://github.com/openinterpreter/open-interpreter/pull/1680](https://github.com/openinterpreter/open-interpreter/pull/1680) | open |
 | 2026-01-22 | lodash/lodash | [https://github.com/lodash/lodash/pull/6093](https://github.com/lodash/lodash/pull/6093) | open |
-| 2026-01-22 | reduxjs/redux | [https://github.com/reduxjs/redux/pull/4838](https://github.com/reduxjs/redux/pull/4838) | open |
-| 2026-01-22 | rust-lang/rustlings | [https://github.com/rust-lang/rustlings/pull/2335](https://github.com/rust-lang/rustlings/pull/2335) | open |
+| 2026-01-22 | reduxjs/redux | [https://github.com/reduxjs/redux/pull/4838](https://github.com/reduxjs/redux/pull/4838) | merged |
+| 2026-01-22 | rust-lang/rustlings | [https://github.com/rust-lang/rustlings/pull/2335](https://github.com/rust-lang/rustlings/pull/2335) | merged |
 | 2026-01-22 | nocodb/nocodb | [https://github.com/nocodb/nocodb/pull/12921](https://github.com/nocodb/nocodb/pull/12921) | open |

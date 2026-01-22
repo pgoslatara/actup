@@ -1,4 +1,4 @@
 # exclude_repos:
-popular_actions_limit: 100
-popular_repos_limit: 250
+popular_actions_limit: 5000
+popular_repos_limit: 10000
 temp_dir: ./tmp
