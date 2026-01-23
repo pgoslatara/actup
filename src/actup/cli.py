@@ -215,8 +215,8 @@ def _fetch_repo_contents(repo_data):
     repo_full_name = repo_data.repo_full_name
     repo_url = repo_data.clone_url
     repo_dir = Path(settings.temp_dir) / "cloned_repos" / repo_full_name.replace("/", "_")
-    logger.info(f"Cloning https://www.github.com/{repo_full_name}...")
-    git_clone_sparse(repo_url, str(repo_dir))
+    logger.info(f"Cloning {repo_url}...")
+    git_clone_sparse(repo_url=repo_url, final_target_dir=str(repo_dir))
 
 
 @app.command()

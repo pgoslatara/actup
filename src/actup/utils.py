@@ -2,6 +2,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 from pathlib import Path
 
 import ollama
@@ -37,26 +38,21 @@ def git_clone_shallow(repo_url: str, target_dir: str):
 def git_clone_sparse(repo_url: str, final_target_dir: str):
     """Clones a Git repository using sparse checkout."""
     repo_root_path = Path(final_target_dir)
-
     if repo_root_path.exists():
         shutil.rmtree(repo_root_path)
 
-    os.makedirs(repo_root_path, exist_ok=True)
-    repo = Repo.init(repo_root_path)
-    origin = repo.create_remote("origin", repo_url)
-    repo.config_writer().set_value("core", "sparseCheckout", True).release()
-    sparse_checkout_file = repo_root_path / ".git" / "info" / "sparse-checkout"
-    with open(sparse_checkout_file, "w") as f:
-        f.write("/.github/\n")
-    origin.fetch(depth=1)
+    repo_root_path.parent.mkdir(parents=True, exist_ok=True)
+    run_git_command(f"git clone --depth 1 --filter=blob:none --no-checkout {repo_url} {str(repo_root_path)}")
+    run_git_command(f"git -C {str(repo_root_path)} sparse-checkout init --cone")
+    run_git_command(f"git -C {str(repo_root_path)} sparse-checkout set .github/")
     try:
-        repo.git.checkout("main")
+        run_git_command(f"git -C {str(repo_root_path)} checkout main")
     except Exception:
         try:
-            repo.git.checkout("master")
+            run_git_command(f"git -C {str(repo_root_path)} checkout master")
         except Exception:
             try:
-                repo.git.checkout("develop")
+                run_git_command(f"git -C {str(repo_root_path)} checkout develop")
             except Exception:
                 logger.warning(f"Unable to checkout {repo_url}")
 
@@ -138,6 +134,11 @@ def replace_action_version_in_content(content: str, action_name: str, old_versio
     pattern = f"uses: {action_name}@{old_version}"
     replacement = f"uses: {action_name}@{new_version}"
     return content.replace(pattern, replacement)
+
+
+def run_git_command(command: str) -> None:
+    """Run a git command using subprocess."""
+    subprocess.run(command.split(" "), check=True, capture_output=True, text=True)
 
 
 def scan_file_for_action_line_number(file_content: str, action: str) -> list[tuple[int, str, str]]:
