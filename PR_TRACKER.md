@@ -26,7 +26,7 @@
 | 2026-01-16 | open-webui/open-webui | [https://github.com/open-webui/open-webui/pull/20720](https://github.com/open-webui/open-webui/pull/20720) | closed |
 | 2026-01-16 | d3/d3 | [https://github.com/d3/d3/pull/4091](https://github.com/d3/d3/pull/4091) | open |
 | 2026-01-16 | iptv-org/iptv | [https://github.com/iptv-org/iptv/pull/32024](https://github.com/iptv-org/iptv/pull/32024) | open |
-| 2026-01-16 | denoland/deno | [https://github.com/denoland/deno/pull/31859](https://github.com/denoland/deno/pull/31859) | open |
+| 2026-01-16 | denoland/deno | [https://github.com/denoland/deno/pull/31859](https://github.com/denoland/deno/pull/31859) | merged |
 | 2026-01-16 | rustdesk/rustdesk | [https://github.com/rustdesk/rustdesk/pull/14056](https://github.com/rustdesk/rustdesk/pull/14056) | open |
 | 2026-01-19 | godotengine/godot | [https://github.com/godotengine/godot/pull/115132](https://github.com/godotengine/godot/pull/115132) | open |
 | 2026-01-19 | shadcn-ui/ui | [https://github.com/shadcn-ui/ui/pull/9385](https://github.com/shadcn-ui/ui/pull/9385) | open |
