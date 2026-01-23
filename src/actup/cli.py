@@ -140,7 +140,7 @@ def create_prs():
             f"{repo_full_name.split('/')[1]}:{branch_name}?expand=1"
         )
         logger.info(f"Visit {wip_pr_url} to check PR before creation")
-        webbrowser.open(wip_pr_url)
+        # webbrowser.open(wip_pr_url)
 
         if relevant_prs := client_api.find_workflow_yaml_prs(repo_full_name=repo_full_name):
             logger.info("The following PRs relate to `.github/workflows`, please take a look prior to creating a PR:")
@@ -153,9 +153,18 @@ def create_prs():
         # Look for PRs that already do what ActUp is doing
         create_pr = True
         for i in relevant_prs:
-            if i["title"].find("Bump the github-actions group") == 0 or i["title"].find("(deps): bump actions/") > 0:
+            if (
+                i["title"].strip().lower().find("bump the github-actions group") == 0
+                or i["title"].strip().lower().find("(deps): bump actions/") >= 0
+                or i["title"].strip().lower().find("build: bump ") >= 0
+                or i["title"].strip().lower().find("ci: bump ") >= 0
+                or i["title"].strip().lower().find("bump ") >= 0
+                or i["author"] == "pgoslatara"
+            ):
                 create_pr = False
-                logger.info(f"PR {i['number']} already updates GitHub Actions so not creating any PR.")
+                logger.info(
+                    f"PR {i['number']} already updates GitHub Actions or is created by me so not creating any PR."
+                )
 
         if create_pr:
             # Use Ollama to merge PR body with template

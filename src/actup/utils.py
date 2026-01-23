@@ -104,6 +104,9 @@ def merge_pr_body_into_template(pr_body: str, pull_request_template_body: str) -
     * If you see boxes like this "[ ]", then fill them in like "[x]" if they are completed (for example, having an accurate PR title, detailing the changes in the PR description, etc.).
     * Do not return a response with "```markdown" at the start.
     * Do not return a response with "```" at the start.
+    * You are not adding tests, do not indicate that you are.
+    * You are not adding documentation, do not indicate that you are.
+    * Focus on accurately filling out the pull request template with the information from the changes described.
     """  # noqa: E501
 
     load_ollama_model(model_name=model_name)

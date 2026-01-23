@@ -94,7 +94,13 @@ class GitHubAPIClient:
                     and (file_name.endswith(".yml") or file_name.endswith(".yaml"))
                 ):
                     modified_prs_info.append(
-                        {"number": pr_number, "title": pr_title, "html_url": pr_html_url, "file_modified": file_name}
+                        {
+                            "number": pr_number,
+                            "title": pr_title,
+                            "html_url": pr_html_url,
+                            "file_modified": file_name,
+                            "author": pr["user"]["login"],
+                        }
                     )
 
         logger.info("\n")
