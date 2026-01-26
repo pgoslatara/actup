@@ -154,11 +154,12 @@ def create_prs():
         create_pr = True
         for i in relevant_prs:
             if (
-                i["title"].strip().lower().find("bump the github-actions group") == 0
-                or i["title"].strip().lower().find("(deps): bump actions/") >= 0
+                i["title"].strip().lower().find("(deps): bump actions/") >= 0
                 or i["title"].strip().lower().find("build: bump ") >= 0
-                or i["title"].strip().lower().find("ci: bump ") >= 0
                 or i["title"].strip().lower().find("bump ") >= 0
+                or i["title"].strip().lower().find("bump the github-actions group") == 0
+                or i["title"].strip().lower().find("chore(deps): bump ") >= 0
+                or i["title"].strip().lower().find("ci: bump ") >= 0
                 or i["author"] == "pgoslatara"
             ):
                 create_pr = False
