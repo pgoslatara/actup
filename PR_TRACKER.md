@@ -101,7 +101,7 @@
 | 2026-01-23 | traefik/traefik | [https://github.com/traefik/traefik/pull/12592](https://github.com/traefik/traefik/pull/12592) | closed |
 | 2026-01-23 | h5bp/Front-end-Developer-Interview-Questions | [https://github.com/h5bp/Front-end-Developer-Interview-Questions/pull/922](https://github.com/h5bp/Front-end-Developer-Interview-Questions/pull/922) | open |
 | 2026-01-23 | minio/minio | [https://github.com/minio/minio/pull/21739](https://github.com/minio/minio/pull/21739) | open |
-| 2026-01-23 | commaai/openpilot | [https://github.com/commaai/openpilot/pull/37020](https://github.com/commaai/openpilot/pull/37020) | open |
+| 2026-01-23 | commaai/openpilot | [https://github.com/commaai/openpilot/pull/37020](https://github.com/commaai/openpilot/pull/37020) | merged |
 | 2026-01-23 | spring-projects/spring-framework | [https://github.com/spring-projects/spring-framework/pull/36199](https://github.com/spring-projects/spring-framework/pull/36199) | closed |
 | 2026-01-23 | scrapy/scrapy | [https://github.com/scrapy/scrapy/pull/7223](https://github.com/scrapy/scrapy/pull/7223) | merged |
 | 2026-01-23 | CorentinJ/Real-Time-Voice-Cloning | [https://github.com/CorentinJ/Real-Time-Voice-Cloning/pull/1368](https://github.com/CorentinJ/Real-Time-Voice-Cloning/pull/1368) | closed |
@@ -109,9 +109,9 @@
 | 2026-01-23 | BurntSushi/ripgrep | [https://github.com/BurntSushi/ripgrep/pull/3267](https://github.com/BurntSushi/ripgrep/pull/3267) | open |
 | 2026-01-23 | unclecode/crawl4ai | [https://github.com/unclecode/crawl4ai/pull/1734](https://github.com/unclecode/crawl4ai/pull/1734) | open |
 | 2026-01-23 | git/git | [https://github.com/git/git/pull/2177](https://github.com/git/git/pull/2177) | closed |
-| 2026-01-23 | topjohnwu/Magisk | [https://github.com/topjohnwu/Magisk/pull/9652](https://github.com/topjohnwu/Magisk/pull/9652) | open |
+| 2026-01-23 | topjohnwu/Magisk | [https://github.com/topjohnwu/Magisk/pull/9652](https://github.com/topjohnwu/Magisk/pull/9652) | merged |
 | 2026-01-23 | rails/rails | [https://github.com/rails/rails/pull/56668](https://github.com/rails/rails/pull/56668) | merged |
-| 2026-01-23 | pathwaycom/pathway | [https://github.com/pathwaycom/pathway/pull/176](https://github.com/pathwaycom/pathway/pull/176) | open |
+| 2026-01-23 | pathwaycom/pathway | [https://github.com/pathwaycom/pathway/pull/176](https://github.com/pathwaycom/pathway/pull/176) | closed |
 | 2026-01-23 | FuelLabs/fuel-core | [https://github.com/FuelLabs/fuel-core/pull/3185](https://github.com/FuelLabs/fuel-core/pull/3185) | closed |
 | 2026-01-23 | cline/cline | [https://github.com/cline/cline/pull/8823](https://github.com/cline/cline/pull/8823) | open |
 | 2026-01-23 | withastro/astro | [https://github.com/withastro/astro/pull/15290](https://github.com/withastro/astro/pull/15290) | closed |

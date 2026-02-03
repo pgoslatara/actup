@@ -86,8 +86,18 @@ class Database:
                 oa.is_outdated IS TRUE
                 AND pre.repo_full_name IS NULL -- i.e. Do not include excluded repos
                 AND oa.repo_full_name NOT IN (
-                    'gorhill/uBlock', -- unable to open PRs
-                    'pocketbase/pocketbase' -- unfriendly to automated improvements
+                    -- CI updates locked to maintainers
+                    'ant-design/ant-design',
+
+                    -- unable to open PRs
+                    'gorhill/uBlock',
+
+                    -- Autoclosed PRs
+                    'AUTOMATIC1111/stable-diffusion-webui',
+
+                    -- unfriendly to automated improvements
+                    'pocketbase/pocketbase',
+                    'Significant-Gravitas/AutoGPT'
                 )
             ORDER BY pr.stars desc
         """).fetchall()
