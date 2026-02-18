@@ -117,11 +117,12 @@ def find_action_shas():
 
     for action in tqdm(actions, desc="Resolving SHAs"):
         tags = client_api.get_tags(action.owner, action.repo)
+        action_key = f"{action.owner}/{action.repo}"
         for tag in tags:
             tag_name = tag.get("name")
             tag_sha = tag.get("commit", {}).get("sha")
             if tag_name and tag_sha:
-                db.save_action_tag(action.name, tag_name, tag_sha)
+                db.save_action_tag(action_key, tag_name, tag_sha)
                 logger.debug(f"Resolved {action.name}@{tag_name} -> {tag_sha[:7]}")
 
     db.close()
