@@ -112,10 +112,29 @@ def find_action_shas():
         logger.info("No popular actions found. Run find-actions first.")
         return
 
-    logger.info(f"Resolving commit SHAs for {len(actions)} actions...")
+    db = Database()
+    actions_to_process = []
+    skipped = 0
+
+    for action in actions:
+        action_key = f"{action.owner}/{action.repo}"
+        if db.has_action_tags(action_key):
+            skipped += 1
+            logger.debug(f"Skipping {action_key} - already processed")
+        else:
+            actions_to_process.append(action)
+
+    db.close()
+
+    logger.info(f"Resolving commit SHAs for {len(actions_to_process)} actions ({skipped} already processed)...")
+
+    if not actions_to_process:
+        logger.info("All actions already processed.")
+        return
+
     db = Database()
 
-    for action in tqdm(actions, desc="Resolving SHAs"):
+    for action in tqdm(actions_to_process, desc="Resolving SHAs"):
         tags = client_api.get_tags(action.owner, action.repo)
         action_key = f"{action.owner}/{action.repo}"
         for tag in tags:

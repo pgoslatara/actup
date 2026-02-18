@@ -346,6 +346,14 @@ class Database:
         ).fetchone()
         return result[0] if result else None
 
+    def has_action_tags(self, action_name: str) -> bool:
+        """Check if an action already has tags stored in the database."""
+        result = self.con.execute(
+            "SELECT 1 FROM action_tags WHERE action_name = ? LIMIT 1",
+            (action_name,),
+        ).fetchone()
+        return result is not None
+
     def truncate_actions(self):
         """Truncate the popular_actions table."""
         self.con.execute("TRUNCATE TABLE popular_actions")
