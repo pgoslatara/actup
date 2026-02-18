@@ -1,9 +1,4 @@
 import logging
-import shutil
-import time
-import webbrowser
-from collections import defaultdict
-from datetime import datetime
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
@@ -16,15 +11,10 @@ from actup.database import Database
 from actup.github_api import GitHubAPIClient
 from actup.github_public import GitHubPublicClient
 from actup.logger import logger
-from actup.models import GitHubAction, GitHubRepo, PullRequestRecord
-from actup.tracker import update_pr_statuses, update_tracker
-from actup.utils import (
-    git_clone_shallow,
-    git_clone_sparse,
-    merge_pr_body_into_template,
-    replace_action_version_in_content,
-    search_and_extract_actions,
-)
+from actup.models import GitHubAction, GitHubRepo
+from actup.pr_creator import PullRequestCreator
+from actup.tracker import update_pr_statuses
+from actup.utils import git_clone_sparse, search_and_extract_actions
 
 app = typer.Typer()
 client_api = GitHubAPIClient()
@@ -42,183 +32,8 @@ def create_prs():
         logger.info("No outdated actions found. Did you run find-outdated-actions?")
         return
 
-    repo_updates = defaultdict(list)
-    for mention in outdated:
-        repo_updates[mention.repo_full_name].append(mention)
-
-    current_user = client_api.get_current_user()
-    temp_dir = Path(settings.temp_dir) / "pr"
-
-    for repo_full_name, mentions in repo_updates.items():
-        owner, repo_name = repo_full_name.split("/")
-        logger.info(f"Processing updates for {repo_full_name}...")
-
-        target_repo_info = client_api.get_repo(owner, repo_name)
-        default_branch = target_repo_info.get("default_branch", "main")
-        logger.info("Forking...")
-        try:
-            client_api.create_fork(owner, repo_name)
-            time.sleep(5)
-        except Exception:
-            logger.info("Fork already exists (or failed), proceeding...")
-
-        try:
-            client_api.sync_fork(current_user, repo_name, default_branch)
-            logger.info("Fork synced with upstream.")
-        except Exception as e:
-            logger.warning(f"Could not sync fork: {e}")
-
-        fork_url = f"https://github.com/{current_user}/{repo_name}.git"
-        repo_dir = temp_dir / repo_full_name.replace("/", "_")
-        if repo_dir.exists():
-            shutil.rmtree(repo_dir)
-
-        logger.info(f"Cloning fork {fork_url}...")
-        auth_url = fork_url.replace("https://", f"https://{client_api.token}@")
-
-        repo = git_clone_shallow(auth_url, str(repo_dir))
-
-        branch_name = f"actup/update-actions-{int(datetime.now().timestamp())}"
-        repo.git.checkout("-b", branch_name)
-
-        modified_files = set()
-        for m in mentions:
-            m.file_path = m.file_path.replace("/cloned_repos/", "/pr/")
-            full_path = m.file_path
-            with open(full_path, "r") as f:
-                content = f.read()
-
-            new_content = replace_action_version_in_content(
-                content, m.action_name, m.detected_version, m.latest_version
-            )
-
-            if new_content != content:
-                with open(full_path, "w") as f:
-                    f.write(new_content)
-                modified_files.add(m.file_path)
-
-        if not modified_files:
-            logger.info("No files changed.")
-            db = Database()
-            db.add_repo_to_pr_exclusions(repo_full_name)
-            db.close()
-            continue
-
-        if len(mentions) > 1:
-            pr_title = commit_message = "chore: Update outdated GitHub Actions versions"
-            pr_body = "This PR updates outdated GitHub Action versions.\n\n"
-        else:
-            pr_title = commit_message = "chore: Update outdated GitHub Actions version"
-            pr_body = "This PR updates an outdated GitHub Action version.\n\n"
-
-        repo.index.add(["/".join(m.split("/")[3:]) for m in modified_files])
-        repo.index.commit(commit_message)
-        logger.info(f"Pushing `{branch_name}`...")
-        repo.remote().push(branch_name)
-
-        logger.info("Creating PR...")
-        pr_title = pr_title
-        pr_body = pr_body
-        for m in mentions:
-            pr_body += (
-                f"- Updated `{m.action_name}` from `{m.detected_version}` to "
-                f"`{m.latest_version}` in `{'/'.join(m.file_path.split('/')[3:])}`\n"
-            )
-
-        # Determine if a PR template exists
-        pr_template_path = None
-        files_in_dot_github = [
-            f.absolute().as_posix().split("/")[-1] for f in (Path(repo_dir) / ".github").iterdir() if f.is_file()
-        ]
-        for f_path in files_in_dot_github:
-            if str(f_path).lower() == "pull_request_template.md":
-                pr_template_path = f_path
-                break
-
-        wip_pr_url = (
-            f"https://github.com/{repo_full_name}/compare/{default_branch}...{current_user}:"
-            f"{repo_full_name.split('/')[1]}:{branch_name}?expand=1"
-        )
-        logger.info(f"Visit {wip_pr_url} to check PR before creation")
-        # webbrowser.open(wip_pr_url)
-
-        if relevant_prs := client_api.find_workflow_yaml_prs(repo_full_name=repo_full_name):
-            logger.info("The following PRs relate to `.github/workflows`, please take a look prior to creating a PR:")
-            already_seen_prs = []
-            for i in relevant_prs:
-                if i["number"] not in already_seen_prs:
-                    logger.info(f"{i['html_url']}: {i['title']}")
-                    already_seen_prs.append(i["number"])
-
-        # Look for PRs that already do what ActUp is doing
-        create_pr = True
-        for i in relevant_prs:
-            if (
-                i["title"].strip().lower().find("(deps): bump actions/") >= 0
-                or i["title"].strip().lower().find("build: bump ") >= 0
-                or i["title"].strip().lower().find("bump ") >= 0
-                or i["title"].strip().lower().find("bump the github-actions group") == 0
-                or i["title"].strip().lower().find("chore(deps): bump ") >= 0
-                or i["title"].strip().lower().find("chore(deps): update ") >= 0
-                or i["title"].strip().lower().find("ci: bump ") >= 0
-                or i["author"] == "pgoslatara"
-            ):
-                create_pr = False
-                logger.info(
-                    f"PR {i['number']} already updates GitHub Actions or is created by me so not creating any PR."
-                )
-
-        if create_pr:
-            # Use Ollama to merge PR body with template
-            if pr_template_path:
-                logger.info("Found PR template file, merging changes into template...")
-                with open(repo_dir / ".github" / pr_template_path, "r") as f:
-                    pull_request_template_content = f.read()
-
-                pr_body = merge_pr_body_into_template(
-                    pr_body=pr_body, pull_request_template_body=pull_request_template_content
-                )
-                logger.info(f"See below the PR body that will be used: \n{pr_body}")
-
-            confirmation = input("Happy for PR to be created (Y/N)?")
-            if confirmation.lower() == "y":
-                pr = client_api.create_pull_request(
-                    owner,
-                    repo_name,
-                    title=pr_title,
-                    body=pr_body,
-                    head=f"{current_user}:{branch_name}",
-                    base=default_branch,
-                )
-
-                logger.info("\n")
-                logger.info(">>>>>>>>>>>>>>>>>>>>>.")
-                logger.info(f"Draft PR created: {pr['html_url']}")
-                logger.info(">>>>>>>>>>>>>>>>>>>>>.")
-                logger.info("\n")
-                webbrowser.open(pr["html_url"])
-
-                record = PullRequestRecord(
-                    repo_full_name=repo_full_name,
-                    pr_url=pr["html_url"],
-                    branch_name=branch_name,
-                    created_at=datetime.now(),
-                    status=pr["state"],
-                )
-                db = Database()
-                db.save_pr_record(record)
-                db.close()
-                update_tracker(record)
-
-            # Log to database so we don't re-create PRs
-            db = Database()
-            db.add_repo_to_pr_exclusions(repo_full_name)
-            db.close()
-            shutil.rmtree(repo_dir)
-        else:
-            db = Database()
-            db.add_repo_to_pr_exclusions(repo_full_name)
-            db.close()
+    creator = PullRequestCreator(client=client_api)
+    creator.create_prs(outdated)
 
 
 @retry(delay=3, tries=2)
