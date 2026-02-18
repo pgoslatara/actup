@@ -1,5 +1,6 @@
 import shutil
 import time
+import webbrowser
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -500,6 +501,7 @@ Learn more: https://docs.github.com/en/actions/security-guides/security-hardenin
             logger.info(f"Draft PR created: {pr['html_url']}")
             logger.info(">>>>>>>>>>>>>>>>>>>>>>.")
             logger.info("\n")
+            webbrowser.open(pr["html_url"])
 
             self.record_pr(repo_full_name, pr["html_url"], branch_name, pr["state"])
             shutil.rmtree(repo_dir)
