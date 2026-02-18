@@ -167,11 +167,10 @@ class PullRequestCreator:
 
         """
         old_ref = f"uses: {action_name}@{old_version}"
-        new_ref = f"uses: {action_name}@{commit_sha}"
-        comment_line = f"# {action_name}@{old_version} -> {commit_sha}\n"
+        new_ref = f"uses: {action_name}@{commit_sha} #{old_version}"
 
         if old_ref in content:
-            return content.replace(old_ref, comment_line + new_ref)
+            return content.replace(old_ref, new_ref)
         return content
 
     def commit_and_push(self, repo: Repo, branch_name: str, modified_files: list[str]) -> None:
