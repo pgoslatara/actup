@@ -1,4 +1,5 @@
 import logging
+import shutil
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
@@ -46,13 +47,19 @@ def _fetch_repo_contents(repo_data):
     repo_full_name = repo_data.repo_full_name
     repo_url = repo_data.clone_url
     repo_dir = Path(settings.temp_dir) / "cloned_repos" / repo_full_name.replace("/", "_")
+    if repo_dir.exists():
+        logger.debug(f"Skipping {repo_full_name} - already cloned")
+        return
     logger.info(f"Cloning {repo_url}...")
     git_clone_sparse(repo_url=repo_url, final_target_dir=str(repo_dir))
 
 
 @app.command()
-def fetch_repos():
+def fetch_repos(force: bool = typer.Option(False, "--force", help="Re-fetch repos that are already cloned.")):
     """Fetch popular repositories contents."""
+    if force:
+        shutil.rmtree(Path(settings.temp_dir) / "cloned_repos", ignore_errors=True)
+
     db = Database()
     known_repos = db.get_popular_repos()
     db.close()
