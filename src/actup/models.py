@@ -12,6 +12,7 @@ class GitHubAction(BaseModel):
     stars: int
     latest_version: str | None
     latest_major_version: str | None
+    commit_sha: str | None = None
     checked_at: datetime | None = None
 
 
@@ -51,6 +52,7 @@ class RepositoryMention(BaseModel):
     latest_version: str
     stars: int
     is_outdated: bool
+    commit_sha: str | None = None
 
 
 class PullRequestRecord(BaseModel):

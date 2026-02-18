@@ -77,10 +77,18 @@ class Database:
         """Get all outdated action mentions."""
         res = self.con.execute("""
             SELECT
-                oa.*,
-                pr.stars
+                oa.repo_full_name,
+                oa.action_name,
+                oa.action_version,
+                oa.filepath,
+                oa.line_number,
+                oa.latest_major_version,
+                oa.is_outdated,
+                pr.stars,
+                pa.commit_sha
             FROM outdated_actions oa
             LEFT JOIN popular_repositories pr ON pr.repo_full_name = oa.repo_full_name
+            LEFT JOIN popular_actions pa ON CONCAT(pa.owner, '/', pa.repo) = oa.action_name
             LEFT JOIN pull_request_exclusions pre ON pre.repo_full_name = oa.repo_full_name
             WHERE
                 oa.is_outdated IS TRUE
@@ -109,13 +117,14 @@ class Database:
         return [
             RepositoryMention(
                 repo_full_name=r[0],
-                file_path=r[3],
-                line_number=r[4],
                 action_name=r[1],
                 detected_version=r[2],
+                file_path=r[3],
+                line_number=r[4],
                 latest_version=r[5],
                 is_outdated=r[6],
                 stars=r[7],
+                commit_sha=r[8] if len(r) > 8 else None,
             )
             for r in res
         ]
@@ -135,7 +144,8 @@ class Database:
                 stars=int(r[3]),
                 latest_version=r[4],
                 latest_major_version=r[5],
-                checked_at=r[6],
+                commit_sha=r[6] if len(r) > 6 else None,
+                checked_at=r[7] if len(r) > 7 else None,
             )
             for r in res
         ]
@@ -177,6 +187,7 @@ class Database:
                 detected_version VARCHAR,
                 latest_version VARCHAR,
                 is_outdated BOOLEAN,
+                commit_sha VARCHAR,
                 PRIMARY KEY (repo_full_name, file_path, line_number)
             );
         """)
@@ -188,6 +199,7 @@ class Database:
                 stars INTEGER,
                 latest_version VARCHAR,
                 latest_major_version VARCHAR,
+                commit_sha VARCHAR,
                 checked_at TIMESTAMP
             );
         """)
@@ -222,7 +234,7 @@ class Database:
         """Save a popular action."""
         self.con.execute(
             """
-            INSERT OR REPLACE INTO popular_actions VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO popular_actions VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 action.name,
@@ -231,6 +243,7 @@ class Database:
                 action.stars,
                 action.latest_version,
                 action.latest_major_version,
+                action.commit_sha,
                 datetime.now(),
             ),
         )
@@ -266,7 +279,7 @@ class Database:
         """Save a repository mention."""
         self.con.execute(
             """
-            INSERT OR REPLACE INTO action_mentions VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO action_mentions VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 mention.repo_full_name,
@@ -276,6 +289,7 @@ class Database:
                 mention.detected_version,
                 mention.latest_version,
                 mention.is_outdated,
+                mention.commit_sha,
             ),
         )
 

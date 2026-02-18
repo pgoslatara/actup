@@ -22,7 +22,9 @@ client_public = GitHubPublicClient()
 
 
 @app.command()
-def create_prs():
+def create_prs(
+    pin_to_sha: bool = typer.Option(False, "--pin-to-sha", help="Pin actions to commit SHAs instead of version tags."),
+):
     """Create Pull Requests for outdated actions."""
     db = Database()
     outdated = db.get_outdated_mentions()
@@ -32,8 +34,11 @@ def create_prs():
         logger.info("No outdated actions found. Did you run find-outdated-actions?")
         return
 
+    if pin_to_sha:
+        logger.info("Mode: Pinning actions to commit SHAs")
+
     creator = PullRequestCreator(client=client_api)
-    creator.create_prs(outdated)
+    creator.create_prs(outdated, pin_to_sha=pin_to_sha)
 
 
 @retry(delay=3, tries=2)
@@ -94,6 +99,32 @@ def find_outdated_actions():
     db = Database()
     db.find_outdated_actions()
     db.close()
+
+
+@app.command()
+def find_action_shas():
+    """Resolve action version tags to commit SHAs."""
+    db = Database()
+    actions = db.get_popular_actions()
+    db.close()
+
+    if not actions:
+        logger.info("No popular actions found. Run find-actions first.")
+        return
+
+    logger.info(f"Resolving commit SHAs for {len(actions)} actions...")
+    db = Database()
+
+    for action in tqdm(actions, desc="Resolving SHAs"):
+        if action.latest_version:
+            sha = client_api.get_tag_sha(action.owner, action.repo, action.latest_version)
+            if sha:
+                action.commit_sha = sha
+                db.save_popular_action(action)
+                logger.debug(f"Resolved {action.name}@{action.latest_version} -> {sha[:7]}")
+
+    db.close()
+    logger.info("Done resolving commit SHAs.")
 
 
 @app.command()

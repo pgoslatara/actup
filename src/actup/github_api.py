@@ -151,3 +151,55 @@ class GitHubAPIClient:
         """Sync a fork with the upstream repository."""
         data = {"branch": branch}
         return self._make_request("POST", f"/repos/{owner}/{repo}/merge-upstream", json=data)
+
+    def get_tags(self, owner: str, repo: str) -> list[dict]:
+        """Get all tags for a repository.
+
+        Args:
+            owner: The owner of the repository.
+            repo: The name of the repository.
+
+        Returns:
+            List of tag objects with name and commit SHA.
+
+        """
+        tags = []
+        page = 1
+        while True:
+            params = {"per_page": 100, "page": page}
+            response = self._make_request("GET", f"/repos/{owner}/{repo}/tags", params=params)
+            if not response:
+                break
+            tags.extend(response)
+            page += 1
+            if len(response) < 100:
+                break
+        return tags
+
+    def get_tag_sha(self, owner: str, repo: str, tag: str) -> str | None:
+        """Resolve a tag to its commit SHA.
+
+        Args:
+            owner: The owner of the repository.
+            repo: The name of the repository.
+            tag: The tag name (e.g., 'v4.0.1' or '4.0.1').
+
+        Returns:
+            The full commit SHA, or None if tag not found.
+
+        """
+        try:
+            response = self._make_request("GET", f"/repos/{owner}/{repo}/git/refs/tags/{tag}")
+            if "object" in response and "sha" in response["object"]:
+                return response["object"]["sha"]
+        except Exception:
+            pass
+
+        try:
+            response = self._make_request("GET", f"/repos/{owner}/{repo}/tags/{tag}")
+            if "commit" in response and "sha" in response["commit"]:
+                return response["commit"]["sha"]
+        except Exception:
+            pass
+
+        return None
