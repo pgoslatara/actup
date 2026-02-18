@@ -141,7 +141,7 @@ class PullRequestCreator:
 
             if self.pin_to_sha and m.commit_sha:
                 new_content = self._replace_with_sha_comment(content, m.action_name, m.detected_version, m.commit_sha)
-            else:
+            elif m.latest_version:
                 new_content = replace_action_version_in_content(
                     content, m.action_name, m.detected_version, m.latest_version
                 )

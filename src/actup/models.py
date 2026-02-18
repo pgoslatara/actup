@@ -49,7 +49,7 @@ class RepositoryMention(BaseModel):
     line_number: int
     action_name: str
     detected_version: str
-    latest_version: str
+    latest_version: str | None = None
     stars: int
     is_outdated: bool
     commit_sha: str | None = None

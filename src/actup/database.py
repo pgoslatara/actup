@@ -85,11 +85,11 @@ class Database:
                 pa.latest_version,
                 oa.is_outdated,
                 pr.stars,
-                at.commit_sha
+                tag.commit_sha
             FROM outdated_actions oa
             LEFT JOIN popular_repositories pr ON pr.repo_full_name = oa.repo_full_name
             LEFT JOIN popular_actions pa ON CONCAT(pa.owner, '/', pa.repo) = oa.action_name
-            LEFT JOIN action_tags at ON at.action_name = oa.action_name AND at.tag = oa.action_version
+            LEFT JOIN action_tags tag ON tag.action_name = oa.action_name AND tag.tag = oa.action_version
             LEFT JOIN pull_request_exclusions pre ON pre.repo_full_name = oa.repo_full_name
             WHERE
                 oa.is_outdated IS TRUE
