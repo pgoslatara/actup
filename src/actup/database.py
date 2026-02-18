@@ -85,10 +85,11 @@ class Database:
                 pa.latest_version,
                 oa.is_outdated,
                 pr.stars,
-                pa.commit_sha
+                at.commit_sha
             FROM outdated_actions oa
             LEFT JOIN popular_repositories pr ON pr.repo_full_name = oa.repo_full_name
             LEFT JOIN popular_actions pa ON CONCAT(pa.owner, '/', pa.repo) = oa.action_name
+            LEFT JOIN action_tags at ON at.action_name = oa.action_name AND at.tag = oa.action_version
             LEFT JOIN pull_request_exclusions pre ON pre.repo_full_name = oa.repo_full_name
             WHERE
                 oa.is_outdated IS TRUE
@@ -213,6 +214,16 @@ class Database:
             self.con.execute("ALTER TABLE action_mentions ADD COLUMN commit_sha VARCHAR")
         except Exception:
             pass
+
+        self.con.execute("""
+            CREATE TABLE IF NOT EXISTS action_tags (
+                action_name VARCHAR,
+                tag VARCHAR,
+                commit_sha VARCHAR,
+                PRIMARY KEY (action_name, tag)
+            );
+        """)
+
         self.con.execute("""
             CREATE TABLE IF NOT EXISTS popular_repositories (
                 repo_full_name VARCHAR PRIMARY KEY,
@@ -317,6 +328,23 @@ class Database:
         """)
         num_action_usages = self.con.execute("SELECT COUNT(*) FROM action_usage").fetchall()[0][0]
         logger.info(f"Saved {num_action_usages} used actions to `action_usage`.")
+
+    def save_action_tag(self, action_name: str, tag: str, commit_sha: str) -> None:
+        """Save an action tag and its commit SHA."""
+        self.con.execute(
+            """
+            INSERT OR REPLACE INTO action_tags (action_name, tag, commit_sha) VALUES (?, ?, ?)
+        """,
+            (action_name, tag, commit_sha),
+        )
+
+    def get_action_tag_sha(self, action_name: str, tag: str) -> str | None:
+        """Get the commit SHA for a specific action tag."""
+        result = self.con.execute(
+            "SELECT commit_sha FROM action_tags WHERE action_name = ? AND tag = ?",
+            (action_name, tag),
+        ).fetchone()
+        return result[0] if result else None
 
     def truncate_actions(self):
         """Truncate the popular_actions table."""

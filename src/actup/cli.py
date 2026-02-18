@@ -103,7 +103,7 @@ def find_outdated_actions():
 
 @app.command()
 def find_action_shas():
-    """Resolve action version tags to commit SHAs."""
+    """Resolve action version tags to commit SHAs for ALL releases."""
     db = Database()
     actions = db.get_popular_actions()
     db.close()
@@ -116,15 +116,16 @@ def find_action_shas():
     db = Database()
 
     for action in tqdm(actions, desc="Resolving SHAs"):
-        if action.latest_version:
-            sha = client_api.get_tag_sha(action.owner, action.repo, action.latest_version)
-            if sha:
-                action.commit_sha = sha
-                db.save_popular_action(action)
-                logger.debug(f"Resolved {action.name}@{action.latest_version} -> {sha[:7]}")
+        tags = client_api.get_tags(action.owner, action.repo)
+        for tag in tags:
+            tag_name = tag.get("name")
+            tag_sha = tag.get("commit", {}).get("sha")
+            if tag_name and tag_sha:
+                db.save_action_tag(action.name, tag_name, tag_sha)
+                logger.debug(f"Resolved {action.name}@{tag_name} -> {tag_sha[:7]}")
 
     db.close()
-    logger.info("Done resolving commit SHAs.")
+    logger.info("Done resolving commit SHAs for all releases.")
 
 
 @app.command()
