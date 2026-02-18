@@ -140,12 +140,20 @@ class PullRequestCreator:
             with open(full_path, "r") as f:
                 content = f.read()
 
-            if self.pin_to_sha and m.commit_sha:
-                new_content = self._replace_with_sha_comment(content, m.action_name, m.detected_version, m.commit_sha)
+            if self.pin_to_sha:
+                if m.commit_sha:
+                    new_content = self._replace_with_sha_comment(
+                        content, m.action_name, m.detected_version, m.commit_sha
+                    )
+                else:
+                    logger.info(f"Skipping {m.action_name}@{m.detected_version} - no commit SHA found in database")
+                    continue
             elif m.latest_version:
                 new_content = replace_action_version_in_content(
                     content, m.action_name, m.detected_version, m.latest_version
                 )
+            else:
+                continue
 
             if new_content != content:
                 with open(full_path, "w") as f:
