@@ -82,7 +82,7 @@ class Database:
                 oa.action_version,
                 oa.filepath,
                 oa.line_number,
-                oa.latest_major_version,
+                pa.latest_version,
                 oa.is_outdated,
                 pr.stars,
                 pa.commit_sha
@@ -112,7 +112,7 @@ class Database:
                     'Significant-Gravitas/AutoGPT'
                 )
                 AND oa.action_name != 'actions/labeler' -- Contains breaking change in v5
-            ORDER BY pr.stars desc
+            ORDER BY pr.stars asc -- desc
         """).fetchall()
         return [
             RepositoryMention(
