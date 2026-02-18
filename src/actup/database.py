@@ -144,8 +144,8 @@ class Database:
                 stars=int(r[3]),
                 latest_version=r[4],
                 latest_major_version=r[5],
-                commit_sha=r[6] if len(r) > 6 else None,
-                checked_at=r[7] if len(r) > 7 else None,
+                commit_sha=r[7] if len(r) > 7 else None,
+                checked_at=r[6] if len(r) > 6 else None,
             )
             for r in res
         ]
@@ -203,6 +203,16 @@ class Database:
                 checked_at TIMESTAMP
             );
         """)
+
+        try:
+            self.con.execute("ALTER TABLE popular_actions ADD COLUMN commit_sha VARCHAR")
+        except Exception:
+            pass
+
+        try:
+            self.con.execute("ALTER TABLE action_mentions ADD COLUMN commit_sha VARCHAR")
+        except Exception:
+            pass
         self.con.execute("""
             CREATE TABLE IF NOT EXISTS popular_repositories (
                 repo_full_name VARCHAR PRIMARY KEY,
@@ -234,7 +244,9 @@ class Database:
         """Save a popular action."""
         self.con.execute(
             """
-            INSERT OR REPLACE INTO popular_actions VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO popular_actions
+            (name, owner, repo, stars, latest_version, latest_major_version, commit_sha, checked_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 action.name,
