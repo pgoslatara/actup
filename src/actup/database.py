@@ -86,8 +86,10 @@ class Database:
                 oa.is_outdated IS TRUE
                 AND pre.repo_full_name IS NULL -- i.e. Do not include excluded repos
                 AND oa.repo_full_name NOT IN (
-                    -- CI updates locked to maintainers
+                    -- Updates locked to maintainers
                     'ant-design/ant-design',
+                    'expo/expo',
+                    'tldraw/tldraw',
 
                     -- unable to open PRs
                     'gorhill/uBlock',
@@ -96,9 +98,12 @@ class Database:
                     'AUTOMATIC1111/stable-diffusion-webui',
 
                     -- unfriendly to automated improvements
+                    'alacritty/alacritty',
                     'pocketbase/pocketbase',
+                    'RVC-Boss/GPT-SoVITS',
                     'Significant-Gravitas/AutoGPT'
                 )
+                AND oa.action_name != 'actions/labeler' -- Contains breaking change in v5
             ORDER BY pr.stars desc
         """).fetchall()
         return [
