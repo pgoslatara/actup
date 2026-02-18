@@ -220,9 +220,10 @@ class PullRequestCreator:
             title_lower = pr["title"].strip().lower()
             if self.pin_to_sha:
                 if (
-                    title_lower.find("pin") >= 0
-                    and title_lower.find("sha") >= 0
+                    (title_lower.find("pin") >= 0 and title_lower.find("sha") >= 0)
                     or title_lower.find("commit sha") >= 0
+                    or (title_lower.find("pin") >= 0 and title_lower.find("hash") >= 0)
+                    or title_lower.find("pin to exact") >= 0
                     or pr.get("author") == "pgoslatara"
                 ):
                     logger.info(
@@ -265,7 +266,19 @@ class PullRequestCreator:
             else:
                 pr_title = "chore: Pin GitHub Action to commit SHA"
 
-            pr_body = "This PR pins GitHub Actions to exact commit SHAs for more reproducible builds.\n\n"
+            pr_body = """This PR pins GitHub Actions to exact commit SHAs for more reproducible builds.
+
+## Why pin to commit SHAs?
+
+Pinning GitHub Actions to specific commit SHAs ensures your workflow uses the exact same
+version every time, preventing unexpected changes when an action publisher releases a new
+version. This improves security and reliability.
+
+Learn more: https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions
+
+## Changes
+
+"""
             for m in mentions:
                 sha_short = m.commit_sha[:7] if m.commit_sha else "unknown"
                 pr_body += (
