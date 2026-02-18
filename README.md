@@ -18,6 +18,7 @@ Automated workflows on GitHub often use tools like Dependabot or Renovatebot to 
 
 *   **Action Discovery:** Identifies popular GitHub Actions.
 *   **Version Tracking:** Determines the latest major version (v3, v4).
+*   **Commit SHA Resolution:** Resolves version tags to exact commit SHAs for reproducible builds.
 *   **Action Scanning:** Scans Action files for action usage.
 *   **Auto-PR:** Forks, branches, updates, and creates Pull Requests automatically.
 *   **PR Tracking:** Keeps a log of created PRs in `PR_TRACKER.md`.
@@ -76,9 +77,26 @@ actup scan-repos
 actup find-outdated-actions
 ```
 
+### Resolve Commit SHAs (optional)
+```bash
+actup find-action-shas
+```
+
+This resolves version tags to exact commit SHAs for more reproducible builds.
+
 ### Create Pull Requests
 ```bash
 actup create-prs
+```
+
+To pin actions to commit SHAs instead of version tags:
+```bash
+actup create-prs --pin-to-sha
+```
+
+When using `--pin-to-sha`, actions are pinned to exact commits with inline comments:
+```yaml
+uses: actions/checkout@7a1234567890abcdef # v4.0.1
 ```
 
 ### Report
