@@ -145,8 +145,8 @@ class Database:
                 stars=int(r[3]),
                 latest_version=r[4],
                 latest_major_version=r[5],
-                commit_sha=r[7] if len(r) > 7 else None,
-                checked_at=r[6] if len(r) > 6 else None,
+                commit_sha=r[6] if len(r) > 6 else None,
+                checked_at=r[7] if len(r) > 7 else None,
             )
             for r in res
         ]
