@@ -287,11 +287,13 @@ Learn more: https://docs.github.com/en/actions/security-guides/security-hardenin
 
 """  # noqa: E501
             for m in mentions:
-                sha_short = m.commit_sha[:7] if m.commit_sha else "unknown"
-                pr_body += (
-                    f"- Pinned `{m.action_name}` from `{m.detected_version}` to `{sha_short}` "
-                    f"in `{'/'.join(m.file_path.split('/')[3:])}`\n"
-                )
+                # Skip mentions where commit SHA is unknown
+                if m.commit_sha:
+                    sha_short = m.commit_sha[:7]
+                    pr_body += (
+                        f"- Pinned `{m.action_name}` from `{m.detected_version}` to `{sha_short}` "
+                        f"in `{'/'.join(m.file_path.split('/')[3:])}`\n"
+                    )
         else:
             if len(mentions) > 1:
                 pr_title = "chore: Update outdated GitHub Actions versions"
