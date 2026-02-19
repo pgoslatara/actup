@@ -50,7 +50,7 @@ class RepositoryMention(BaseModel):
     action_name: str
     detected_version: str
     latest_version: str | None = None
-    stars: int
+    stars: int | None = None
     is_outdated: bool
     commit_sha: str | None = None
 

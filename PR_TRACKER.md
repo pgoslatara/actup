@@ -188,3 +188,9 @@
 | 2026-02-04 | faif/python-patterns | [https://github.com/faif/python-patterns/pull/465](https://github.com/faif/python-patterns/pull/465) | merged |
 | 2026-02-04 | upscayl/upscayl | [https://github.com/upscayl/upscayl/pull/1432](https://github.com/upscayl/upscayl/pull/1432) | open |
 | 2026-02-04 | milvus-io/milvus | [https://github.com/milvus-io/milvus/pull/47565](https://github.com/milvus-io/milvus/pull/47565) | open |
+| 2026-02-18 | python-mode/python-mode | [https://github.com/python-mode/python-mode/pull/1196](https://github.com/python-mode/python-mode/pull/1196) | open |
+| 2026-02-19 | samchon/typia | [https://github.com/samchon/typia/pull/1734](https://github.com/samchon/typia/pull/1734) | open |
+| 2026-02-19 | dotnet/msbuild | [https://github.com/dotnet/msbuild/pull/13269](https://github.com/dotnet/msbuild/pull/13269) | open |
+| 2026-02-19 | argmaxinc/WhisperKit | [https://github.com/argmaxinc/WhisperKit/pull/426](https://github.com/argmaxinc/WhisperKit/pull/426) | open |
+| 2026-02-19 | tuist/tuist | [https://github.com/tuist/tuist/pull/9533](https://github.com/tuist/tuist/pull/9533) | open |
+| 2026-02-19 | huggingface/alignment-handbook | [https://github.com/huggingface/alignment-handbook/pull/228](https://github.com/huggingface/alignment-handbook/pull/228) | open |

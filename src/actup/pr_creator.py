@@ -279,15 +279,13 @@ class PullRequestCreator:
 
 ## Why pin to commit SHAs?
 
-Pinning GitHub Actions to specific commit SHAs ensures your workflow uses the exact same
-version every time, preventing unexpected changes when an action publisher releases a new
-version. This improves security and reliability.
+Pinning GitHub Actions to specific commit SHAs ensures your workflow uses the exact same version every time, preventing unexpected changes when an action publisher releases a new version. This improves security and reliability.
 
 Learn more: https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions
 
 ## Changes
 
-"""
+"""  # noqa: E501
             for m in mentions:
                 sha_short = m.commit_sha[:7] if m.commit_sha else "unknown"
                 pr_body += (

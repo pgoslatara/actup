@@ -107,6 +107,7 @@ def merge_pr_body_into_template(pr_body: str, pull_request_template_body: str) -
     * You are not adding tests, do not indicate that you are.
     * You are not adding documentation, do not indicate that you are.
     * Focus on accurately filling out the pull request template with the information from the changes described.
+    * IMPORTANT: If the changes description includes a link to GitHub documentation (https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions), you MUST preserve this exact URL in your response. This documentation link explains why pinning to commit SHAs is safer and should always be included.
     """  # noqa: E501
 
     load_ollama_model(model_name=model_name)
